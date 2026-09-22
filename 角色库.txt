@@ -1,0 +1,801 @@
+import json
+import copy
+from typing import Dict, Any, Optional, List, Tuple
+from enum import Enum
+
+
+# -------------------- 属性系统（内嵌） --------------------
+class AttributeSystem:
+    """属性系统：管理角色的核心数值属性和状态标记。支持上下限、临时加成、历史记录和回调。"""
+
+    def __init__(
+        self,
+        initial_attributes: Optional[Dict[str, int]] = None,
+        initial_flags: Optional[Dict[str, Any]] = None,
+        attribute_limits: Optional[Dict[str, Tuple[int, int]]] = None,
+        enable_history: bool = False,
+    ):
+        self.attribute_limits = {
+            "stamina": (0, 100),
+            "discipline": (0, 100),
+            "mood": (0, 100),
+            "instructor_favor": (0, 100),
+            "classmate_relation": (0, 100),
+            "health": (0, 100),
+            "thirst": (0, 100),
+        }
+        if attribute_limits:
+            self.attribute_limits.update(attribute_limits)
+
+        default_attrs = {
+            "stamina": 80,
+            "discipline": 60,
+            "mood": 70,
+            "instructor_favor": 50,
+            "classmate_relation": 50,
+            "health": 80,
+            "thirst": 30,
+        }
+        if initial_attributes:
+            default_attrs.update(initial_attributes)
+
+        self.attributes: Dict[str, int] = {}
+        for attr, val in default_attrs.items():
+            self.attributes[attr] = self._clamp(attr, val)
+
+        self.temporary_bonuses: Dict[str, int] = {}
+        self.flags: Dict[str, Any] = {}
+        if initial_flags:
+            self.flags.update(initial_flags)
+
+        self.change_callbacks = []
+        self.enable_history = enable_history
+        self.history = []
+        self.link_rules = []
+
+    def _clamp(self, attr: str, value: int) -> int:
+        if attr in self.attribute_limits:
+            lo, hi = self.attribute_limits[attr]
+            return max(lo, min(value, hi))
+        return value
+
+    def _record_history(self, attr: str, old_val: int, new_val: int, source: str = ""):
+        if not self.enable_history:
+            return
+        self.history.append({
+            "attr": attr,
+            "old": old_val,
+            "new": new_val,
+            "delta": new_val - old_val,
+            "source": source,
+        })
+        if len(self.history) > 1000:
+            self.history.pop(0)
+
+    def _fire_callbacks(self, attr: str, old_val: int, new_val: int):
+        for attr_filter, callback in self.change_callbacks:
+            if attr_filter is None or attr_filter == attr:
+                callback(attr, old_val, new_val, self)
+
+    def get(self, attr: str, include_bonus: bool = False) -> Optional[int]:
+        if attr not in self.attributes:
+            return None
+        base = self.attributes[attr]
+        if include_bonus and attr in self.temporary_bonuses:
+            return base + self.temporary_bonuses[attr]
+        return base
+
+    def set(self, attr: str, value: int, source: str = ""):
+        if attr not in self.attributes:
+            self.attributes[attr] = self._clamp(attr, value)
+            self._fire_callbacks(attr, 0, value)
+            self._record_history(attr, 0, value, source)
+            return self
+        old_val = self.attributes[attr]
+        new_val = self._clamp(attr, value)
+        if old_val != new_val:
+            self.attributes[attr] = new_val
+            self._fire_callbacks(attr, old_val, new_val)
+            self._record_history(attr, old_val, new_val, source)
+        return self
+
+    def add(self, attr: str, delta: int, source: str = ""):
+        if attr not in self.attributes:
+            raise KeyError(f"未知属性: {attr}")
+        old_val = self.attributes[attr]
+        new_val = self._clamp(attr, old_val + delta)
+        if old_val != new_val:
+            self.attributes[attr] = new_val
+            self._fire_callbacks(attr, old_val, new_val)
+            self._record_history(attr, old_val, new_val, source)
+        return self
+
+    def apply_effects(self, effects: Dict[str, int], source: str = ""):
+        for attr, delta in effects.items():
+            if isinstance(delta, (int, float)) and attr in self.attributes:
+                self.add(attr, int(delta), source)
+        return self
+
+    def add_temporary_bonus(self, attr: str, bonus: int):
+        self.temporary_bonuses[attr] = self.temporary_bonuses.get(attr, 0) + bonus
+        return self
+
+    def remove_temporary_bonus(self, attr: str):
+        self.temporary_bonuses.pop(attr, None)
+        return self
+
+    def clear_temporary_bonuses(self):
+        self.temporary_bonuses.clear()
+        return self
+
+    def set_flag(self, flag: str, value: Any = True):
+        self.flags[flag] = value
+        return self
+
+    def get_flag(self, flag: str, default: Any = False):
+        return self.flags.get(flag, default)
+
+    def has_flag(self, flag: str) -> bool:
+        return self.flags.get(flag, False) is True
+
+    def remove_flag(self, flag: str):
+        self.flags.pop(flag, None)
+        return self
+
+    def apply_flags(self, flags: Dict[str, Any]):
+        self.flags.update(flags)
+        return self
+
+    def on_change(self, attr: Optional[str], callback):
+        self.change_callbacks.append((attr, callback))
+        return self
+
+    def remove_callbacks(self, attr: Optional[str] = None):
+        if attr is None:
+            self.change_callbacks.clear()
+        else:
+            self.change_callbacks = [(a, cb) for a, cb in self.change_callbacks if a != attr]
+        return self
+
+    def add_link_rule(self, target_attr: str, condition: Dict[str, Any], effect: Dict[str, int], interval: int = 1):
+        self.link_rules.append({
+            "target_attr": target_attr,
+            "condition": condition,
+            "effect": effect,
+            "interval": interval,
+            "counter": 0
+        })
+        return self
+
+    def check_link_rules(self):
+        for rule in self.link_rules:
+            rule["counter"] += 1
+            if rule["counter"] >= rule["interval"]:
+                rule["counter"] = 0
+                if self._check_condition(rule["condition"]):
+                    self.apply_effects(rule["effect"], source="link_rule")
+
+    def _check_condition(self, condition: Dict[str, Any]) -> bool:
+        for attr, cond in condition.items():
+            if attr not in self.attributes:
+                return False
+            actual = self.attributes[attr]
+            if isinstance(cond, dict):
+                if "gte" in cond and actual < cond["gte"]:
+                    return False
+                if "lte" in cond and actual > cond["lte"]:
+                    return False
+                if "eq" in cond and actual != cond["eq"]:
+                    return False
+            else:
+                if actual != cond:
+                    return False
+        return True
+
+    def is_exhausted(self) -> bool:
+        return self.get("stamina", include_bonus=True) <= 0
+
+    def is_health_critical(self) -> bool:
+        return self.get("health", include_bonus=True) <= 0
+
+    def is_thirsty(self, threshold: int = 80) -> bool:
+        return self.get("thirst", include_bonus=True) >= threshold
+
+    def is_all_ok(self) -> bool:
+        return (self.get("stamina", include_bonus=True) > 20 and
+                self.get("health", include_bonus=True) > 30 and
+                self.get("mood", include_bonus=True) > 20)
+
+    def snapshot(self) -> Dict[str, Any]:
+        return {
+            "attributes": copy.deepcopy(self.attributes),
+            "temporary_bonuses": copy.deepcopy(self.temporary_bonuses),
+            "flags": copy.deepcopy(self.flags),
+        }
+
+    def restore_snapshot(self, snap: Dict[str, Any]):
+        self.temporary_bonuses = copy.deepcopy(snap.get("temporary_bonuses", {}))
+        self.flags = copy.deepcopy(snap.get("flags", {}))
+        for attr, val in snap.get("attributes", {}).items():
+            self.set(attr, val, source="restore")
+        return self
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "attributes": copy.deepcopy(self.attributes),
+            "temporary_bonuses": copy.deepcopy(self.temporary_bonuses),
+            "flags": copy.deepcopy(self.flags),
+            "link_rules": copy.deepcopy(self.link_rules),
+        }
+
+    def load_from_dict(self, data: Dict[str, Any]):
+        if "attributes" in data:
+            for attr, val in data["attributes"].items():
+                self.set(attr, val, source="load")
+        if "temporary_bonuses" in data:
+            self.temporary_bonuses = copy.deepcopy(data["temporary_bonuses"])
+        if "flags" in data:
+            self.flags = copy.deepcopy(data["flags"])
+        if "link_rules" in data:
+            self.link_rules = copy.deepcopy(data["link_rules"])
+        return self
+
+    def display_status(self):
+        print("属性：")
+        for attr, val in self.attributes.items():
+            bonus = self.temporary_bonuses.get(attr, 0)
+            if bonus:
+                print(f"  {attr}: {val} (加成{bonus:+d})")
+            else:
+                print(f"  {attr}: {val}")
+        print("标记：")
+        if self.flags:
+            for flag, val in self.flags.items():
+                print(f"  {flag}: {val}")
+        else:
+            print("  (无)")
+
+
+# -------------------- 辅助类（状态效果、技能、物品） --------------------
+class EffectType(Enum):
+    BUFF = "buff"
+    DEBUFF = "debuff"
+
+
+class StatusEffect:
+    def __init__(self, effect_id: str, name: str, effect_type: EffectType,
+                 attribute_mods: Dict[str, int], duration: int, description: str = ""):
+        self.id = effect_id
+        self.name = name
+        self.type = effect_type
+        self.attribute_mods = attribute_mods
+        self.duration = duration
+        self.description = description
+
+    def tick(self) -> bool:
+        self.duration -= 1
+        return self.duration <= 0
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "type": self.type.value,
+            "attribute_mods": self.attribute_mods,
+            "duration": self.duration,
+            "description": self.description,
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            effect_id=data["id"],
+            name=data["name"],
+            effect_type=EffectType(data["type"]),
+            attribute_mods=data["attribute_mods"],
+            duration=data["duration"],
+            description=data.get("description", ""),
+        )
+
+
+class Skill:
+    def __init__(self, skill_id: str, name: str, description: str,
+                 effects: Dict[str, int], cooldown: int = 0, target_self: bool = True):
+        self.id = skill_id
+        self.name = name
+        self.description = description
+        self.effects = effects
+        self.cooldown = cooldown
+        self.current_cooldown = 0
+        self.target_self = target_self
+
+    def use(self, user, target=None) -> bool:
+        if self.current_cooldown > 0:
+            return False
+        actual_target = user if self.target_self else target
+        if actual_target is None:
+            return False
+        actual_target.apply_effects(self.effects, source=f"技能:{self.name}")
+        self.current_cooldown = self.cooldown
+        return True
+
+    def tick(self):
+        if self.current_cooldown > 0:
+            self.current_cooldown -= 1
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "effects": self.effects,
+            "cooldown": self.cooldown,
+            "current_cooldown": self.current_cooldown,
+            "target_self": self.target_self,
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        skill = cls(
+            skill_id=data["id"],
+            name=data["name"],
+            description=data.get("description", ""),
+            effects=data["effects"],
+            cooldown=data.get("cooldown", 0),
+            target_self=data.get("target_self", True),
+        )
+        skill.current_cooldown = data.get("current_cooldown", 0)
+        return skill
+
+
+class Item:
+    def __init__(self, item_id: str, name: str, description: str = "",
+                 effects: Optional[Dict[str, int]] = None, quantity: int = 1):
+        self.id = item_id
+        self.name = name
+        self.description = description
+        self.effects = effects or {}
+        self.quantity = quantity
+
+    def use(self, user) -> bool:
+        if self.quantity <= 0:
+            return False
+        user.apply_effects(self.effects, source=f"使用物品:{self.name}")
+        self.quantity -= 1
+        return True
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "effects": self.effects,
+            "quantity": self.quantity,
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            item_id=data["id"],
+            name=data["name"],
+            description=data.get("description", ""),
+            effects=data.get("effects", {}),
+            quantity=data.get("quantity", 1),
+        )
+
+
+# -------------------- 角色类 --------------------
+class Character:
+    """角色类：封装属性系统、等级经验、状态效果、技能、物品、分组、关系等。"""
+
+    def __init__(
+        self,
+        character_id: str,
+        name: str,
+        role: str = "student",
+        initial_attributes: Optional[Dict[str, int]] = None,
+        initial_flags: Optional[Dict[str, Any]] = None,
+        attribute_limits: Optional[Dict[str, Tuple[int, int]]] = None,
+        enable_history: bool = False,
+    ):
+        self.attributes = AttributeSystem(
+            initial_attributes=initial_attributes,
+            initial_flags=initial_flags,
+            attribute_limits=attribute_limits,
+            enable_history=enable_history,
+        )
+        self.id = character_id
+        self.name = name
+        self.role = role
+        self.level = 1
+        self.exp = 0
+        self.exp_to_next = 100
+        self.status_effects: List[StatusEffect] = []
+        self.skills: Dict[str, Skill] = {}
+        self.inventory: Dict[str, Item] = {}
+        self.relationships: Dict[str, int] = {}
+        self.groups: List[str] = []
+        self.custom_data: Dict[str, Any] = {}
+
+    # 属性快捷方法
+    def get_attr(self, attr: str, include_bonus: bool = False):
+        return self.attributes.get(attr, include_bonus)
+
+    def set_attr(self, attr: str, value: int, source: str = ""):
+        self.attributes.set(attr, value, source)
+        return self
+
+    def add_attr(self, attr: str, delta: int, source: str = ""):
+        self.attributes.add(attr, delta, source)
+        return self
+
+    def apply_effects(self, effects: Dict[str, int], source: str = ""):
+        self.attributes.apply_effects(effects, source)
+        return self
+
+    def set_flag(self, flag: str, value: Any = True):
+        self.attributes.set_flag(flag, value)
+        return self
+
+    def get_flag(self, flag: str, default: Any = False):
+        return self.attributes.get_flag(flag, default)
+
+    # 等级经验
+    def gain_exp(self, amount: int):
+        self.exp += amount
+        while self.exp >= self.exp_to_next:
+            self.exp -= self.exp_to_next
+            self.level_up()
+
+    def level_up(self):
+        self.level += 1
+        self.exp_to_next = int(self.exp_to_next * 1.5)
+        print(f"{self.name} 升到了 {self.level} 级！")
+
+    # 状态效果
+    def add_status_effect(self, effect: StatusEffect):
+        for i, e in enumerate(self.status_effects):
+            if e.id == effect.id:
+                self.status_effects[i] = effect
+                return
+        self.status_effects.append(effect)
+
+    def remove_status_effect(self, effect_id: str) -> bool:
+        for i, e in enumerate(self.status_effects):
+            if e.id == effect_id:
+                del self.status_effects[i]
+                return True
+        return False
+
+    def tick_status_effects(self):
+        expired = []
+        for effect in self.status_effects:
+            self.apply_effects(effect.attribute_mods, source=f"状态效果:{effect.name}")
+            if effect.tick():
+                expired.append(effect.id)
+        for eid in expired:
+            self.remove_status_effect(eid)
+
+    def get_total_attribute_mods_from_effects(self) -> Dict[str, int]:
+        total = {}
+        for effect in self.status_effects:
+            for attr, val in effect.attribute_mods.items():
+                total[attr] = total.get(attr, 0) + val
+        return total
+
+    # 技能
+    def learn_skill(self, skill: Skill):
+        self.skills[skill.id] = skill
+
+    def use_skill(self, skill_id: str, target: Optional["Character"] = None) -> bool:
+        skill = self.skills.get(skill_id)
+        if not skill:
+            return False
+        return skill.use(self, target)
+
+    def tick_skills(self):
+        for skill in self.skills.values():
+            skill.tick()
+
+    # 物品
+    def add_item(self, item: Item):
+        if item.id in self.inventory:
+            self.inventory[item.id].quantity += item.quantity
+        else:
+            self.inventory[item.id] = item
+
+    def remove_item(self, item_id: str, quantity: int = 1) -> bool:
+        if item_id not in self.inventory:
+            return False
+        item = self.inventory[item_id]
+        if item.quantity < quantity:
+            return False
+        item.quantity -= quantity
+        if item.quantity <= 0:
+            del self.inventory[item_id]
+        return True
+
+    def use_item(self, item_id: str) -> bool:
+        item = self.inventory.get(item_id)
+        if not item:
+            return False
+        return item.use(self)
+
+    # 关系
+    def set_relationship(self, other_id: str, value: int, limits: Tuple[int, int] = (0, 100)):
+        lo, hi = limits
+        self.relationships[other_id] = max(lo, min(value, hi))
+
+    def add_relationship(self, other_id: str, delta: int, limits: Tuple[int, int] = (0, 100)):
+        current = self.relationships.get(other_id, 50)
+        lo, hi = limits
+        self.relationships[other_id] = max(lo, min(current + delta, hi))
+
+    def get_relationship(self, other_id: str, default: int = 50) -> int:
+        return self.relationships.get(other_id, default)
+
+    # 分组
+    def join_group(self, group_name: str):
+        if group_name not in self.groups:
+            self.groups.append(group_name)
+
+    def leave_group(self, group_name: str):
+        if group_name in self.groups:
+            self.groups.remove(group_name)
+
+    # 序列化
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "role": self.role,
+            "level": self.level,
+            "exp": self.exp,
+            "exp_to_next": self.exp_to_next,
+            "attributes": self.attributes.to_dict(),
+            "status_effects": [e.to_dict() for e in self.status_effects],
+            "skills": {sid: s.to_dict() for sid, s in self.skills.items()},
+            "inventory": {iid: i.to_dict() for iid, i in self.inventory.items()},
+            "relationships": copy.deepcopy(self.relationships),
+            "groups": copy.deepcopy(self.groups),
+            "custom_data": copy.deepcopy(self.custom_data),
+        }
+
+    def save_to_file(self, filename: str):
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(self.to_dict(), f, ensure_ascii=False, indent=2)
+
+    def load_from_dict(self, data: Dict[str, Any]):
+        self.id = data.get("id", self.id)
+        self.name = data.get("name", self.name)
+        self.role = data.get("role", self.role)
+        self.level = data.get("level", 1)
+        self.exp = data.get("exp", 0)
+        self.exp_to_next = data.get("exp_to_next", 100)
+        if "attributes" in data:
+            self.attributes.load_from_dict(data["attributes"])
+        if "status_effects" in data:
+            self.status_effects = [StatusEffect.from_dict(e) for e in data["status_effects"]]
+        if "skills" in data:
+            self.skills = {sid: Skill.from_dict(s) for sid, s in data["skills"].items()}
+        if "inventory" in data:
+            self.inventory = {iid: Item.from_dict(i) for iid, i in data["inventory"].items()}
+        if "relationships" in data:
+            self.relationships = copy.deepcopy(data["relationships"])
+        if "groups" in data:
+            self.groups = copy.deepcopy(data["groups"])
+        if "custom_data" in data:
+            self.custom_data = copy.deepcopy(data["custom_data"])
+        return self
+
+    def load_from_file(self, filename: str) -> bool:
+        try:
+            with open(filename, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            self.load_from_dict(data)
+            return True
+        except FileNotFoundError:
+            return False
+
+    def display(self):
+        print(f"角色: {self.name} (ID: {self.id}, 角色: {self.role}, 等级: {self.level})")
+        self.attributes.display_status()
+        if self.status_effects:
+            print("状态效果:")
+            for e in self.status_effects:
+                print(f"  {e.name} (剩余{e.duration}回合) - {e.description}")
+        if self.skills:
+            print("技能:")
+            for s in self.skills.values():
+                cd = f" (冷却:{s.current_cooldown})" if s.current_cooldown > 0 else ""
+                print(f"  {s.name}{cd}")
+        if self.inventory:
+            print("背包:")
+            for item in self.inventory.values():
+                print(f"  {item.name} x{item.quantity}")
+        if self.groups:
+            print("分组:", ", ".join(self.groups))
+
+
+# -------------------- 班主任子类 --------------------
+class HeadTeacher(Character):
+    """班主任角色，增加教育相关行为"""
+
+    def __init__(self, character_id: str, name: str,
+                 initial_attributes: Optional[Dict[str, int]] = None,
+                 initial_flags: Optional[Dict[str, Any]] = None,
+                 attribute_limits: Optional[Dict[str, Tuple[int, int]]] = None,
+                 enable_history: bool = False):
+        super().__init__(
+            character_id=character_id,
+            name=name,
+            role="head_teacher",
+            initial_attributes=initial_attributes,
+            initial_flags=initial_flags,
+            attribute_limits=attribute_limits,
+            enable_history=enable_history,
+        )
+        self.custom_data.setdefault("class_name", "未指定班级")
+
+    def talk_to_student(self, student: Character, topic: str = "general") -> str:
+        if topic == "encourage":
+            student.add_attr("mood", 10, source="班主任鼓励")
+            student.add_relationship(self.id, 5)
+            return f"{self.name} 鼓励了 {student.name}，学生感到温暖。"
+        elif topic == "criticize":
+            student.add_attr("mood", -10, source="班主任批评")
+            student.add_attr("discipline", 5, source="班主任批评")
+            student.add_relationship(self.id, -5)
+            return f"{self.name} 批评了 {student.name}，学生有些沮丧但更守纪律。"
+        else:
+            student.add_attr("mood", 5, source="与班主任谈话")
+            student.add_relationship(self.id, 3)
+            return f"{self.name} 和 {student.name} 聊了聊，学生感觉不错。"
+
+    def hold_class_meeting(self, students: List[Character]):
+        for s in students:
+            s.add_attr("discipline", 5, source="班会")
+            s.add_attr("mood", -2, source="班会")
+        print(f"{self.name} 召开了班会，班级纪律提升，但大家有点累。")
+
+
+# -------------------- 角色管理器 --------------------
+class CharacterManager:
+    def __init__(self):
+        self.characters: Dict[str, Character] = {}
+
+    def add_character(self, character: Character):
+        self.characters[character.id] = character
+
+    def create_character(
+        self,
+        character_id: str,
+        name: str,
+        role: str = "student",
+        initial_attributes: Optional[Dict[str, int]] = None,
+        initial_flags: Optional[Dict[str, Any]] = None,
+    ) -> Character:
+        char = Character(
+            character_id=character_id,
+            name=name,
+            role=role,
+            initial_attributes=initial_attributes,
+            initial_flags=initial_flags,
+        )
+        self.add_character(char)
+        return char
+
+    def create_head_teacher(
+        self,
+        character_id: str,
+        name: str,
+        initial_attributes: Optional[Dict[str, int]] = None,
+        initial_flags: Optional[Dict[str, Any]] = None,
+    ) -> HeadTeacher:
+        char = HeadTeacher(
+            character_id=character_id,
+            name=name,
+            initial_attributes=initial_attributes,
+            initial_flags=initial_flags,
+        )
+        self.add_character(char)
+        return char
+
+    def get_character(self, character_id: str) -> Optional[Character]:
+        return self.characters.get(character_id)
+
+    def remove_character(self, character_id: str) -> bool:
+        if character_id in self.characters:
+            del self.characters[character_id]
+            return True
+        return False
+
+    def get_characters_by_role(self, role: str) -> List[Character]:
+        return [char for char in self.characters.values() if char.role == role]
+
+    def get_characters_in_group(self, group_name: str) -> List[Character]:
+        return [char for char in self.characters.values() if group_name in char.groups]
+
+    def set_relationship_between(self, id1: str, id2: str, value: int):
+        char1 = self.get_character(id1)
+        char2 = self.get_character(id2)
+        if char1 and char2:
+            char1.set_relationship(id2, value)
+            char2.set_relationship(id1, value)
+
+    def save_all(self, filename: str):
+        data = {cid: char.to_dict() for cid, char in self.characters.items()}
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+    def load_all(self, filename: str) -> bool:
+        try:
+            with open(filename, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            self.characters.clear()
+            for cid, char_data in data.items():
+                role = char_data.get("role", "student")
+                if role == "head_teacher":
+                    char = HeadTeacher(
+                        character_id=cid,
+                        name=char_data.get("name", ""),
+                    )
+                else:
+                    char = Character(
+                        character_id=cid,
+                        name=char_data.get("name", ""),
+                        role=role,
+                    )
+                char.load_from_dict(char_data)
+                self.characters[cid] = char
+            return True
+        except FileNotFoundError:
+            return False
+
+    def display_all(self):
+        for char in self.characters.values():
+            char.display()
+            print("-" * 30)
+
+
+# -------------------- 使用示例 --------------------
+if __name__ == "__main__":
+    manager = CharacterManager()
+
+    # 创建玩家
+    player = manager.create_character(
+        "player", "李明", role="student",
+        initial_attributes={"stamina": 80, "discipline": 60, "mood": 70},
+        initial_flags={"has_uniform": True}
+    )
+
+    # 创建教官
+    instructor = manager.create_character(
+        "instructor", "王教官", role="instructor",
+        initial_attributes={"discipline": 90}
+    )
+
+    # 创建班主任
+    head_teacher = manager.create_head_teacher(
+        "head_teacher", "刘老师",
+        initial_attributes={"discipline": 80, "mood": 70},
+        initial_flags={"is_head_teacher": True}
+    )
+
+    # 互动
+    print(head_teacher.talk_to_student(player, topic="encourage"))
+    head_teacher.hold_class_meeting([player])
+
+    # 设置关系
+    manager.set_relationship_between("player", "instructor", 60)
+    player.add_relationship("head_teacher", 10)
+
+    # 显示
+    manager.display_all()
+
+    # 保存与加载
+    manager.save_all("characters_save.json")
+    new_manager = CharacterManager()
+    new_manager.load_all("characters_save.json")
+    print("\n重新加载后的角色:")
+    new_manager.display_all()

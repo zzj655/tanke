@@ -1,0 +1,348 @@
+import json
+import random
+import os
+import sys
+
+# -------------------- 基础工具 --------------------
+def clamp(value, min_val=0, max_val=100):
+    return max(min_val, min(value, max_val))
+
+# -------------------- 条件判断 --------------------
+def check_range(actual, condition):
+    if isinstance(condition, (int, float)):
+        return actual == condition
+    if isinstance(condition, dict):
+        if "gte" in condition and actual < condition["gte"]:
+            return False
+        if "lte" in condition and actual > condition["lte"]:
+            return False
+        if "eq" in condition and actual != condition["eq"]:
+            return False
+        return True
+    return False
+
+def check_condition(condition, player):
+    if not condition:
+        return True
+    for key, value in condition.items():
+        if key == "day":
+            if not check_range(player["day"], value):
+                return False
+        elif key == "phase":
+            if player["phase"] != value:
+                return False
+        elif key == "weather":
+            if player["weather"] != value:
+                return False
+        elif key in player:
+            if not check_range(player[key], value):
+                return False
+        elif key in player["flags"]:
+            if player["flags"][key] != value:
+                return False
+        else:
+            return False
+    return True
+
+# -------------------- 效果应用 --------------------
+def apply_effects(player, effects):
+    if not effects:
+        return
+    for attr, delta in effects.items():
+        if attr in ["stamina", "discipline", "mood", "instructor_favor", "classmate_relation", "health", "thirst"]:
+            player[attr] = clamp(player[attr] + delta)
+        elif attr == "day":
+            player["day"] += delta
+
+def apply_set_flags(player, flags):
+    if flags:
+        player["flags"].update(flags)
+
+def handle_option(player, option, event_id, event_cooldown):
+    remark = ""
+    # 固定效果
+    apply_effects(player, option.get("effects", {}))
+    apply_set_flags(player, option.get("set_flags", {}))
+    # 随机结果
+    if "chance" in option:
+        if random.random() < option["chance"]:
+            apply_effects(player, option.get("success_effects", {}))
+            apply_set_flags(player, option.get("success_set_flags", {}))
+            remark = option.get("success_effects", {}).get("remark", option.get("success_remark", ""))
+        else:
+            apply_effects(player, option.get("fail_effects", {}))
+            apply_set_flags(player, option.get("fail_set_flags", {}))
+            remark = option.get("fail_effects", {}).get("remark", option.get("fail_remark", ""))
+    # 事件冷却：刚刚触发的事件权重降低
+    event_cooldown[event_id] = event_cooldown.get(event_id, 0) + 3
+    return remark
+
+# -------------------- 随机选择（带冷却权重） --------------------
+def weighted_choice(events, event_cooldown):
+    total = 0
+    for e in events:
+        w = e.get("weight", 1)
+        # 冷却减权：每触发一次，权重暂时降低0.5，最低0.1
+        cd = event_cooldown.get(e["id"], 0)
+        if cd > 0:
+            w = max(0.1, w - 0.5 * cd)
+        total += w
+    r = random.uniform(0, total)
+    upto = 0
+    for e in events:
+        w = e.get("weight", 1)
+        cd = event_cooldown.get(e["id"], 0)
+        if cd > 0:
+            w = max(0.1, w - 0.5 * cd)
+        if upto + w >= r:
+            return e
+        upto += w
+    return events[-1]
+
+# -------------------- 结局评分 --------------------
+def generate_score(player):
+    score = 0
+    # 基础属性分（每项满分20）
+    score += player["discipline"] * 0.2
+    score += player["instructor_favor"] * 0.2
+    score += player["classmate_relation"] * 0.2
+    score += player["health"] * 0.1
+    score += player["mood"] * 0.1
+    # 额外加分
+    if player["flags"].get("is_pacesetter"):
+        score += 15
+    if player["flags"].get("is_monitor"):
+        score += 10
+    if player["flags"].get("injured"):
+        score -= 10
+    formation = player["flags"].get("formation")
+    if formation == "gun":
+        score += 5
+    elif formation == "stick":
+        score += 5
+    if player["flags"].get("well_prepared"):
+        score += 5
+    score = clamp(int(score), 0, 100)
+    if score >= 90:
+        grade = "S"
+    elif score >= 80:
+        grade = "A"
+    elif score >= 70:
+        grade = "B"
+    elif score >= 60:
+        grade = "C"
+    else:
+        grade = "D"
+    return score, grade
+
+def generate_ending(player):
+    lines = []
+    if player["health"] <= 30:
+        lines.append("虽然身体抱恙，但坚持完成了军训。")
+    if player["discipline"] >= 80 and player["instructor_favor"] >= 80:
+        lines.append("你被评为“优秀标兵”！")
+    if player["flags"].get("is_monitor"):
+        lines.append("作为临时班长，你获得了同学们的认可。")
+    if player["classmate_relation"] >= 80:
+        lines.append("你收获了一群好朋友。")
+    if player["flags"].get("injured"):
+        lines.append("带着伤病坚持训练，精神可嘉。")
+    formation = player["flags"].get("formation")
+    if formation == "gun":
+        lines.append("持枪方阵的英姿成为你难忘的回忆。")
+    elif formation == "stick":
+        lines.append("防暴棍方阵的训练让你变得更坚毅。")
+    elif formation == "normal":
+        lines.append("正常连队的扎实训练为你打下了良好基础。")
+    if not lines:
+        lines.append("你平平淡淡地度过了军训。")
+    return "\n".join(lines)
+
+# -------------------- 存档读档 --------------------
+def save_game(player, event_cooldown, filename="save.json"):
+    data = {
+        "player": player,
+        "event_cooldown": event_cooldown
+    }
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    print("游戏已保存。")
+
+def load_game(filename="save.json"):
+    if not os.path.exists(filename):
+        print("没有找到存档文件。")
+        return None, None
+    with open(filename, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data.get("player"), data.get("event_cooldown", {})
+
+# -------------------- 主游戏循环 --------------------
+def main():
+    print("=" * 40)
+    print("          军训模拟器")
+    print("=" * 40)
+    print("欢迎参加军训！你将度过7天的训练生活。")
+    print("输入数字选择选项；可随时输入 status 查看状态，save 保存，quit 退出。\n")
+
+    # 加载事件库
+    if not os.path.exists("events.json"):
+        print("错误：找不到 events.json 文件。")
+        return
+    with open("events.json", "r", encoding="utf-8") as f:
+        events = json.load(f)
+
+    # 初始化玩家
+    player = {
+        "stamina": 80,
+        "discipline": 60,
+        "mood": 70,
+        "instructor_favor": 50,
+        "classmate_relation": 50,
+        "health": 80,
+        "thirst": 30,          # 口渴度：0=不渴，100=极度口渴
+        "day": 1,
+        "phase": "morning",
+        "weather": "sunny",
+        "flags": {
+            "has_uniform": True,
+            "formation": None,
+            "is_monitor": False,
+            "is_pacesetter": False,
+            "injured": False,
+            "rested": False,
+            "well_prepared": True,
+            "blister": False
+        }
+    }
+    event_cooldown = {}
+
+    # 固定事件序列：每天特定阶段优先触发
+    fixed_events = {
+        ("morning", "morning_jog"),   # 每天早晨固定早操
+        ("evening", "evening_roll_call")  # 每天晚上固定晚点名
+    }
+
+    # 阶段序列
+    phase_sequence = ["morning", "training", "noon", "training", "rest", "evening", "night"]
+
+    # 主循环
+    while player["day"] <= 7:
+        # 每天更新天气
+        weather_roll = random.random()
+        if weather_roll < 0.2:
+            player["weather"] = "rain"
+        elif weather_roll < 0.4:
+            player["weather"] = "windy"
+        else:
+            player["weather"] = "sunny"
+        print(f"\n======= 第 {player['day']} 天（天气：{player['weather']}） =======")
+
+        for phase in phase_sequence:
+            player["phase"] = phase
+
+            # 口渴度自然增长
+            if phase in ["training", "noon"]:
+                player["thirst"] = clamp(player["thirst"] + random.randint(3, 8))
+
+            # 检查健康/体力是否极低
+            if player["health"] <= 0 or player["stamina"] <= 0:
+                print("\n你的身体已经无法支撑，被送往医务室休息。")
+                player["health"] = clamp(player["health"] + 20)
+                player["stamina"] = clamp(player["stamina"] + 30)
+                player["mood"] = clamp(player["mood"] - 10)
+                print("休息后感觉好了一些，但心情有些低落。")
+                continue
+
+            # 检查口渴度是否过高
+            if player["thirst"] >= 80:
+                print("\n你口渴难耐，喉咙像火烧一样！")
+                player["stamina"] = clamp(player["stamina"] - 5)
+                player["mood"] = clamp(player["mood"] - 10)
+
+            # 固定事件优先
+            chosen_event = None
+            for phase_key, event_id in fixed_events:
+                if phase == phase_key:
+                    # 找到对应事件并确保条件满足
+                    for e in events:
+                        if e["id"] == event_id and check_condition(e.get("condition", {}), player):
+                            chosen_event = e
+                            break
+                    break
+            if chosen_event is None:
+                # 筛选可用事件
+                available = [e for e in events if check_condition(e.get("condition", {}), player)]
+                if available:
+                    chosen_event = weighted_choice(available, event_cooldown)
+
+            if chosen_event is None:
+                continue
+
+            # 显示事件
+            print(f"\n--- [{phase}] {chosen_event['title']} ---")
+            print(chosen_event["description"])
+
+            # 显示选项
+            for i, opt in enumerate(chosen_event["options"], 1):
+                print(f"{i}. {opt['text']}")
+
+            # 获取玩家选择
+            choice = None
+            while choice is None:
+                inp = input("请选择（输入数字，或输入 status/save/quit）: ").strip().lower()
+                if inp == "status":
+                    print("\n当前状态：")
+                    print(f"  体力：{player['stamina']}  纪律：{player['discipline']}  心情：{player['mood']}")
+                    print(f"  健康：{player['health']}  口渴度：{player['thirst']}  教官好感：{player['instructor_favor']}  同学关系：{player['classmate_relation']}")
+                    print(f"  标记：{player['flags']}")
+                    continue
+                elif inp == "save":
+                    save_game(player, event_cooldown)
+                    continue
+                elif inp == "quit":
+                    print("确定退出吗？(y/n)")
+                    if input().strip().lower() == "y":
+                        sys.exit(0)
+                    continue
+                try:
+                    idx = int(inp) - 1
+                    if 0 <= idx < len(chosen_event["options"]):
+                        choice = idx
+                    else:
+                        print("无效选择，请重新输入。")
+                except ValueError:
+                    print("请输入数字。")
+
+            # 处理选项
+            remark = handle_option(player, chosen_event["options"][choice], chosen_event["id"], event_cooldown)
+            if remark:
+                print(f"结果：{remark}")
+
+            # 显示简要属性
+            print(f"[体力:{player['stamina']} 纪律:{player['discipline']} 心情:{player['mood']} 健康:{player['health']} 口渴:{player['thirst']} 教官好感:{player['instructor_favor']} 同学关系:{player['classmate_relation']}]")
+
+            # 检查是否死亡
+            if player["health"] <= 0:
+                print("\n你的健康降为0，被紧急送往医院，军训提前结束。")
+                break
+
+        if player["health"] <= 0:
+            break
+        player["day"] += 1
+
+    # 游戏结束
+    print("\n" + "=" * 40)
+    print("          军训结束")
+    print("=" * 40)
+    if player["health"] <= 0:
+        print("由于身体原因，你未能完成全程军训。")
+    else:
+        print("你坚持完成了7天军训！")
+
+    score, grade = generate_score(player)
+    print(f"\n【最终评分】{score} 分，等级：{grade}")
+    print("\n【结局评价】")
+    print(generate_ending(player))
+
+if __name__ == "__main__":
+    main()

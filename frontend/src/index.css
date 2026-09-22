@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Microsoft YaHei', 'SimHei', sans-serif;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.theme-military { background-color: #1a2e1a; color: #e8f0d8; }
+.theme-desert { background-color: #2b2200; color: #f5e6c8; }
+.theme-forest { background-color: #0d1f0d; color: #d4e8d4; }
+.theme-simple { background-color: #f5f5f5; color: #222222; }
+.theme-night { background-color: #0a0a1a; color: #d0d0f0; }
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+::-webkit-scrollbar-thumb { background: rgba(100,100,100,0.5); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(100,100,100,0.7); }
+
+.progress-bar {
+  transition: width 0.5s ease, background-color 0.3s ease;
+}
+
+.event-card {
+  animation: slideUp 0.4s ease-out;
+}
+
+.option-btn {
+  transition: all 0.2s ease;
+}
+
+.option-btn:hover {
+  transform: translateX(5px);
+}
+
+@keyframes slideUp {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.animate-fade-in { animation: fadeIn 0.5s ease-in-out; }

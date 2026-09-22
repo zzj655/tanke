@@ -1,0 +1,1671 @@
+[
+  {
+    "id": "day0_prepare",
+    "title": "军训前夜：准备物资",
+    "condition": {"day": 0, "phase": "evening"},
+    "description": "明天军训开始，你收拾行李。除了军训服，还需要准备防晒霜、水壶、鞋垫、零食等。",
+    "options": [
+      {
+        "text": "认真列清单，准备齐全",
+        "effects": {"mood": 5, "discipline": 5, "stamina": 0},
+        "set_flags": {"well_prepared": true}
+      },
+      {
+        "text": "随便塞几件衣服，到时候再说",
+        "effects": {"mood": -5, "discipline": -5, "stamina": 0},
+        "set_flags": {"well_prepared": false}
+      }
+    ]
+  },
+  {
+    "id": "day1_start",
+    "title": "军训第一天：领取军训服",
+    "condition": {"day": 1, "phase": "morning"},
+    "description": "你排队领到一套迷彩服，味道像刚从仓库翻出来的。你试穿了一下，裤腰有点大。",
+    "options": [
+      {
+        "text": "用皮带勒紧，精神抖擞",
+        "effects": {"mood": 10, "discipline": 5},
+        "set_flags": {"has_uniform": true}
+      },
+      {
+        "text": "嫌弃地扔在床上，想穿自己的衣服",
+        "effects": {"mood": -5, "discipline": -5},
+        "set_flags": {"has_uniform": false}
+      }
+    ]
+  },
+  {
+    "id": "day1_morning_no_uniform",
+    "title": "没穿军训服的尴尬",
+    "condition": {"day": 1, "phase": "morning", "has_uniform": false},
+    "description": "集合时，你穿着自己的T恤站在一片迷彩中，像一根突兀的电线杆。教官的目光像刀子一样刮过来。",
+    "options": [
+      {
+        "text": "低头装透明，祈祷别被看见",
+        "effects": {"discipline": -10, "mood": -10, "instructor_favor": -5},
+        "chance": 0.3,
+        "success_effects": {"remark": "教官居然没看见"},
+        "fail_effects": {"remark": "被教官点名：那个穿白T恤的，出列！", "instructor_favor": -15, "mood": -15}
+      },
+      {
+        "text": "主动报告：教官，我军训服还没干",
+        "effects": {"discipline": 5, "instructor_favor": 5, "mood": -10},
+        "set_flags": {"has_uniform": false}
+      }
+    ]
+  },
+  {
+    "id": "opening_ceremony",
+    "title": "军训开幕式：烈日下的煎熬",
+    "condition": {"day": 1, "phase": "afternoon", "has_uniform": true},
+    "description": "操场像巨大的烤箱，领导讲话像老式收音机。你站得腿发麻，汗水流进眼睛，心里默数着领导喝了多少次水。",
+    "options": [
+      {
+        "text": "站如松，用意志力对抗炎热",
+        "effects": {"discipline": 10, "stamina": -5, "instructor_favor": 5, "health": -5},
+        "chance": 0.8,
+        "success_effects": {"remark": "教官对你投来赞许的目光", "instructor_favor": 5},
+        "fail_effects": {"remark": "腿麻到失去知觉，差点摔出队列", "health": -5, "mood": -10}
+      },
+      {
+        "text": "悄悄活动脚趾，心里骂太阳",
+        "effects": {"discipline": -5, "stamina": -2, "mood": -5},
+        "chance": 0.6,
+        "success_effects": {"remark": "没被发现"},
+        "fail_effects": {"remark": "被教官瞪了一眼：动什么动！", "instructor_favor": -10}
+      }
+    ]
+  },
+  {
+    "id": "morning_jog",
+    "title": "早操：清晨五公里",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "morning"},
+    "description": "天还没亮，哨声就响了。睡眼惺忪的你被拉去跑操，嘴里还留着牙膏味。",
+    "options": [
+      {
+        "text": "跟着队伍，调整呼吸",
+        "effects": {"stamina": -15, "discipline": 10, "health": 5},
+        "chance": 0.7,
+        "success_effects": {"remark": "坚持跑完，精神了不少"},
+        "fail_effects": {"remark": "岔气，捂着肚子跑", "health": -5, "mood": -5}
+      },
+      {
+        "text": "悄悄放慢速度，抄近道",
+        "effects": {"stamina": -5, "discipline": -10, "mood": 5},
+        "chance": 0.4,
+        "success_effects": {"remark": "偷懒成功，没被发现"},
+        "fail_effects": {"remark": "被教官抓包，罚多跑一圈", "stamina": -10, "instructor_favor": -10}
+      }
+    ]
+  },
+  {
+    "id": "evening_roll_call",
+    "title": "晚点名",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "evening"},
+    "description": "晚上集合点名，教官拿着名单一个个念。你站在队伍里，忍住不打哈欠。",
+    "options": [
+      {
+        "text": "大声答到，声音洪亮",
+        "effects": {"discipline": 10, "instructor_favor": 5, "mood": 5},
+        "chance": 0.9,
+        "success_effects": {"remark": "被教官表扬：精神不错"},
+        "fail_effects": {"remark": "嗓子哑了，被要求喝水", "stamina": -5}
+      },
+      {
+        "text": "迷迷糊糊答到，差点睡着",
+        "effects": {"discipline": -10, "mood": -5, "stamina": -5},
+        "chance": 0.5,
+        "success_effects": {"remark": "没被注意"},
+        "fail_effects": {"remark": "被教官瞪了一眼：站好！", "instructor_favor": -5}
+      }
+    ]
+  },
+  {
+    "id": "learn_song",
+    "title": "学唱军歌",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "evening"},
+    "description": "教官教唱《团结就是力量》，你五音不全，但气势不能输。",
+    "options": [
+      {
+        "text": "扯着嗓子吼，管它跑不跑调",
+        "effects": {"mood": 10, "classmate_relation": 5, "discipline": 5},
+        "chance": 0.8,
+        "success_effects": {"remark": "教官说：要的就是这个气势！", "instructor_favor": 5},
+        "fail_effects": {"remark": "跑调太厉害，被同学笑", "mood": -5}
+      },
+      {
+        "text": "小声跟唱，滥竽充数",
+        "effects": {"discipline": -5, "mood": 0, "stamina": 0},
+        "chance": 0.6,
+        "success_effects": {"remark": "没被发现"},
+        "fail_effects": {"remark": "被教官点名：你，单独唱一遍！", "mood": -10, "instructor_favor": -5}
+      }
+    ]
+  },
+  {
+    "id": "train_junzi",
+    "title": "军姿训练：与太阳的搏斗",
+    "condition": {"day": {"gte": 1, "lte": 7}, "phase": "training"},
+    "description": "“军姿是一切动作的基础！”教官吼着。太阳毒辣，你感觉鞋底都要融化了，汗水流进眼睛，又痒又疼。",
+    "options": [
+      {
+        "text": "纹丝不动，像一棵倔强的树",
+        "effects": {"stamina": -15, "discipline": 15, "instructor_favor": 10, "health": -5},
+        "chance": 0.8,
+        "success_effects": {"remark": "被教官表扬：看看人家！", "instructor_favor": 10},
+        "fail_effects": {"remark": "眼前发黑，差点晕倒", "health": -10, "instructor_favor": -5}
+      },
+      {
+        "text": "趁教官转身，偷偷擦汗",
+        "effects": {"stamina": -5, "discipline": -10, "instructor_favor": -5},
+        "chance": 0.4,
+        "success_effects": {"remark": "成功擦汗，爽！", "mood": 5},
+        "fail_effects": {"remark": "被教官抓个正着：动！加站10分钟！", "stamina": -10, "discipline": -10}
+      },
+      {
+        "text": "心里默唱《种太阳》，转移注意力",
+        "effects": {"stamina": -10, "discipline": 5, "mood": 5},
+        "chance": 0.7,
+        "success_effects": {"remark": "时间过得快了点"},
+        "fail_effects": {"remark": "唱出声了，被全班行注目礼", "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "train_shaoxi",
+    "title": "稍息与跨立：教官的找茬时间",
+    "condition": {"day": {"gte": 1, "lte": 7}, "phase": "training"},
+    "description": "教官示范动作后开始巡回检查。你刚把脚伸出一点，他就出现在你身后：“这是稍息？你这是稍息还是稍息啊？”",
+    "options": [
+      {
+        "text": "迅速调整，做到标准",
+        "effects": {"discipline": 10, "stamina": -5, "instructor_favor": 5},
+        "chance": 0.9,
+        "success_effects": {"remark": "教官点点头走了"},
+        "fail_effects": {"remark": "紧张过度，左脚踩右脚", "mood": -10}
+      },
+      {
+        "text": "小声嘀咕：差不多得了",
+        "effects": {"discipline": -10, "instructor_favor": -10, "mood": -5},
+        "chance": 0.5,
+        "success_effects": {"remark": "教官没听见"},
+        "fail_effects": {"remark": "教官耳朵尖：你说什么？出列！", "instructor_favor": -15, "stamina": -5}
+      }
+    ]
+  },
+  {
+    "id": "train_tingzhijianzhuanfa",
+    "title": "停止间转法：左右不分星人",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "training"},
+    "description": "“向左转！”你自信地向左转去，结果和右边的同学脸对脸。教官扶额：“你是来搞笑的吗？”",
+    "options": [
+      {
+        "text": "集中注意力，听清口令再转",
+        "effects": {"discipline": 10, "stamina": -10, "mood": -5},
+        "chance": 0.75,
+        "success_effects": {"remark": "这次终于转对了", "instructor_favor": 5},
+        "fail_effects": {"remark": "又转错了，被罚做10个俯卧撑", "stamina": -15, "mood": -15}
+      },
+      {
+        "text": "偷偷看旁边同学，跟ta一起转",
+        "effects": {"discipline": -5, "stamina": -5, "classmate_relation": 5},
+        "chance": 0.5,
+        "success_effects": {"remark": "跟对了，没被发现"},
+        "fail_effects": {"remark": "被教官发现：眼睛往哪看呢！", "instructor_favor": -10}
+      }
+    ]
+  },
+  {
+    "id": "train_dunxiaqili",
+    "title": "蹲下与起立：腿不是自己的了",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "training"},
+    "description": "“蹲下！”“起立！”“蹲下！”“起立！”……你的腿开始颤抖，膝盖发出抗议。教官像复读机一样无情。",
+    "options": [
+      {
+        "text": "咬牙坚持，保持标准",
+        "effects": {"stamina": -20, "discipline": 10, "health": -5},
+        "chance": 0.7,
+        "success_effects": {"remark": "被教官表扬：不错，有股狠劲", "instructor_favor": 5},
+        "fail_effects": {"remark": "膝盖一软，差点跪了", "health": -10, "mood": -10}
+      },
+      {
+        "text": "趁教官不注意，蹲得浅一点",
+        "effects": {"stamina": -10, "discipline": -10, "instructor_favor": -10},
+        "chance": 0.4,
+        "success_effects": {"remark": "偷懒成功，腿保住了"},
+        "fail_effects": {"remark": "被教官发现：你这是在蹲马桶吗？加练！", "stamina": -15, "discipline": -10}
+      }
+    ]
+  },
+  {
+    "id": "train_jingli",
+    "title": "敬礼与礼毕：手速大比拼",
+    "condition": {"day": {"gte": 1, "lte": 7}, "phase": "training"},
+    "description": "教官演示敬礼：迅速、有力、干脆。你试了一下，像是招财猫。教官看了直摇头。",
+    "options": [
+      {
+        "text": "反复练习，直到手酸",
+        "effects": {"stamina": -10, "discipline": 15, "instructor_favor": 10},
+        "chance": 0.8,
+        "success_effects": {"remark": "动作越来越标准，被叫出列示范", "instructor_favor": 10},
+        "fail_effects": {"remark": "手臂抽筋，表情狰狞", "health": -5}
+      },
+      {
+        "text": "随便比划，反正不检查",
+        "effects": {"discipline": -10, "instructor_favor": -5, "stamina": -3},
+        "chance": 0.6,
+        "success_effects": {"remark": "没被注意"},
+        "fail_effects": {"remark": "被教官单独留下加练", "stamina": -10, "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "train_yuanditabu",
+    "title": "原地踏步：踩点困难户",
+    "condition": {"day": {"gte": 1, "lte": 7}, "phase": "training"},
+    "description": "“一二一，一二一！”你努力跟上节奏，却总比别人快半拍。旁边的同学用眼神示意你慢点。",
+    "options": [
+      {
+        "text": "集中精神听口令，调整节奏",
+        "effects": {"stamina": -10, "discipline": 10, "mood": -5},
+        "chance": 0.85,
+        "success_effects": {"remark": "终于踩上点了", "instructor_favor": 5},
+        "fail_effects": {"remark": "越调越乱，被教官点名", "instructor_favor": -5}
+      },
+      {
+        "text": "跟着旁边同学踏，省心",
+        "effects": {"stamina": -5, "discipline": -5, "classmate_relation": 5},
+        "chance": 0.6,
+        "success_effects": {"remark": "跟得不错"},
+        "fail_effects": {"remark": "被教官发现：别老看别人！", "instructor_favor": -10}
+      }
+    ]
+  },
+  {
+    "id": "train_qibuzou",
+    "title": "齐步走：顺拐的艺术",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "training"},
+    "description": "齐步走要求手臂和腿协调，你却走出了同手同脚的魔鬼步伐。教官憋笑憋得很辛苦。",
+    "options": [
+      {
+        "text": "努力调整，想着左臂右腿",
+        "effects": {"stamina": -15, "discipline": 10, "mood": -5},
+        "chance": 0.7,
+        "success_effects": {"remark": "慢慢正常了", "instructor_favor": 5},
+        "fail_effects": {"remark": "还是顺拐，被全班围观", "mood": -15, "classmate_relation": -5}
+      },
+      {
+        "text": "顺拐就顺拐，我走我的",
+        "effects": {"stamina": -10, "discipline": -10, "mood": 5},
+        "chance": 0.5,
+        "success_effects": {"remark": "教官没注意，你混过去了"},
+        "fail_effects": {"remark": "被教官叫停：那个顺拐的，出列！", "instructor_favor": -15, "mood": -15}
+      }
+    ]
+  },
+  {
+    "id": "train_zhengbuzou",
+    "title": "正步走：砸地要响，腿要直",
+    "condition": {"day": {"gte": 3, "lte": 7}, "phase": "training"},
+    "description": "正步走要求踢腿如风，砸地如雷。你使出吃奶的劲，腿却像面条一样软。教官说：“你是在跳芭蕾吗？”",
+    "options": [
+      {
+        "text": "绷直脚尖，用力砸地",
+        "effects": {"stamina": -20, "discipline": 15, "health": -5},
+        "chance": 0.7,
+        "success_effects": {"remark": "声音响亮，被表扬", "instructor_favor": 10},
+        "fail_effects": {"remark": "脚趾戳到地面，疼得龇牙", "health": -10}
+      },
+      {
+        "text": "能省力就省力，轻轻落地",
+        "effects": {"stamina": -10, "discipline": -10, "instructor_favor": -10},
+        "chance": 0.4,
+        "success_effects": {"remark": "没被发现"},
+        "fail_effects": {"remark": "被教官加练正步分解动作", "stamina": -15, "mood": -15}
+      }
+    ]
+  },
+  {
+    "id": "train_qizheng_huan",
+    "title": "齐步换正步：口令的陷阱",
+    "condition": {"day": {"gte": 4, "lte": 7}, "phase": "training"},
+    "description": "教官突然喊“正步走！”，你还没反应过来，旁边同学已经踢腿了。你赶紧跟上，却慢了半拍，整个排面像波浪一样。",
+    "options": [
+      {
+        "text": "全神贯注听口令，提前准备",
+        "effects": {"stamina": -15, "discipline": 10, "mood": -5},
+        "chance": 0.75,
+        "success_effects": {"remark": "转换流畅，被表扬", "instructor_favor": 5},
+        "fail_effects": {"remark": "还是慢半拍，被教官瞪", "instructor_favor": -5}
+      },
+      {
+        "text": "看别人动作，跟着换",
+        "effects": {"stamina": -10, "discipline": -5, "classmate_relation": 5},
+        "chance": 0.5,
+        "success_effects": {"remark": "跟上了，没被发现"},
+        "fail_effects": {"remark": "被教官点名：别东张西望！", "instructor_favor": -10}
+      }
+    ]
+  },
+  {
+    "id": "train_zhengqi_huan",
+    "title": "正步换齐步：突然的放松",
+    "condition": {"day": {"gte": 4, "lte": 7}, "phase": "training"},
+    "description": "正步换齐步，节奏突变。你刚适应正步的力度，又要切换回齐步，脚下一乱，差点踩到前面同学。",
+    "options": [
+      {
+        "text": "调整呼吸，稳住节奏",
+        "effects": {"stamina": -15, "discipline": 10, "mood": -5},
+        "chance": 0.7,
+        "success_effects": {"remark": "转换自然，教官满意"},
+        "fail_effects": {"remark": "又顺拐了，被同学笑", "mood": -10}
+      },
+      {
+        "text": "稍微放慢，找感觉",
+        "effects": {"stamina": -10, "discipline": -5, "instructor_favor": -5},
+        "chance": 0.6,
+        "success_effects": {"remark": "没被发现"},
+        "fail_effects": {"remark": "被教官训斥：跟上！", "instructor_favor": -10}
+      }
+    ]
+  },
+  {
+    "id": "train_paobuzou",
+    "title": "跑步走：气喘吁吁",
+    "condition": {"day": {"gte": 5, "lte": 7}, "phase": "training"},
+    "description": "跑步走要求整齐轻快，你跑得肺都要炸了，还要保持队形。教官在旁边喊：“坚持！最后一圈！”（其实还有五圈）。",
+    "options": [
+      {
+        "text": "咬牙跟紧，不掉队",
+        "effects": {"stamina": -25, "discipline": 10, "health": -10},
+        "chance": 0.7,
+        "success_effects": {"remark": "跑完被表扬：有毅力", "instructor_favor": 5},
+        "fail_effects": {"remark": "体力透支，眼前发黑", "health": -15, "instructor_favor": -5}
+      },
+      {
+        "text": "偷偷放慢脚步，落在后面",
+        "effects": {"stamina": -15, "discipline": -10, "instructor_favor": -10},
+        "chance": 0.4,
+        "success_effects": {"remark": "没被发现，省了点力气"},
+        "fail_effects": {"remark": "被教官抓包：你！跑外圈！", "stamina": -20, "mood": -15}
+      }
+    ]
+  },
+  {
+    "id": "train_baoshu",
+    "title": "报数：声音要响",
+    "condition": {"day": {"gte": 1, "lte": 7}, "phase": "training"},
+    "description": "教官要求报数，从排头到排尾，声音要洪亮。轮到你时，你嗓子有点哑。",
+    "options": [
+      {
+        "text": "扯着嗓子喊，声音洪亮",
+        "effects": {"discipline": 10, "instructor_favor": 5, "mood": 5},
+        "chance": 0.8,
+        "success_effects": {"remark": "被教官表扬：就这个气势！"},
+        "fail_effects": {"remark": "喊破音，被同学笑", "mood": -5}
+      },
+      {
+        "text": "小声报数，蒙混过关",
+        "effects": {"discipline": -10, "instructor_favor": -5, "mood": 0},
+        "chance": 0.6,
+        "success_effects": {"remark": "教官没注意"},
+        "fail_effects": {"remark": "被教官要求重报，直到满意", "stamina": -5, "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "train_zhengli_zhuangzhe",
+    "title": "整理着装：细节决定成败",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "training"},
+    "description": "教官检查着装，帽子、腰带、衣领、裤脚，一处不对就要扣分。你赶紧低头检查自己。",
+    "options": [
+      {
+        "text": "认真整理，确保每处都合格",
+        "effects": {"discipline": 10, "instructor_favor": 5, "mood": -5},
+        "chance": 0.9,
+        "success_effects": {"remark": "着装规范，被表扬"},
+        "fail_effects": {"remark": "腰带系太紧，喘不过气", "health": -5}
+      },
+      {
+        "text": "随便整理一下，差不多就行",
+        "effects": {"discipline": -10, "instructor_favor": -10, "mood": 0},
+        "chance": 0.5,
+        "success_effects": {"remark": "教官没细看"},
+        "fail_effects": {"remark": "被教官指出三处问题，罚站", "stamina": -10, "discipline": -5}
+      }
+    ]
+  },
+  {
+    "id": "train_bai_bi",
+    "title": "摆臂训练：高度要统一",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "training"},
+    "description": "教官要求摆臂高度一致，前摆30厘米，后摆30厘米。你摆得像钟摆，总是比别人高。",
+    "options": [
+      {
+        "text": "盯着前面同学的手臂，调整高度",
+        "effects": {"stamina": -10, "discipline": 10, "mood": -5},
+        "chance": 0.7,
+        "success_effects": {"remark": "终于齐了，教官满意", "instructor_favor": 5},
+        "fail_effects": {"remark": "越调越乱，被教官单独纠正", "instructor_favor": -5}
+      },
+      {
+        "text": "随便摆摆，反正不检查",
+        "effects": {"stamina": -5, "discipline": -10, "instructor_favor": -5},
+        "chance": 0.4,
+        "success_effects": {"remark": "没被注意"},
+        "fail_effects": {"remark": "被教官发现，罚练摆臂100次", "stamina": -15, "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "train_zhengbu_fenjie",
+    "title": "正步分解动作：定住！",
+    "condition": {"day": {"gte": 3, "lte": 7}, "phase": "training"},
+    "description": "正步分解训练，教官喊“一”，你要单腿站立，另一腿踢出保持不动。你的腿开始剧烈发抖。",
+    "options": [
+      {
+        "text": "咬紧牙关，保持平衡",
+        "effects": {"stamina": -20, "discipline": 15, "health": -5},
+        "chance": 0.7,
+        "success_effects": {"remark": "纹丝不动，被表扬", "instructor_favor": 10},
+        "fail_effects": {"remark": "腿一软，差点摔倒", "health": -5, "mood": -10}
+      },
+      {
+        "text": "偷偷把脚放低一点",
+        "effects": {"stamina": -10, "discipline": -10, "instructor_favor": -10},
+        "chance": 0.4,
+        "success_effects": {"remark": "没被发现"},
+        "fail_effects": {"remark": "被教官抓包，加练5分钟", "stamina": -15, "mood": -15}
+      }
+    ]
+  },
+  {
+    "id": "train_kouhao",
+    "title": "喊口号：气势不能输",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "training"},
+    "description": "教官要求边行进边喊口号：“一！二！三！四！”你嗓子有点哑，但气势不能输。",
+    "options": [
+      {
+        "text": "扯着嗓子吼，震耳欲聋",
+        "effects": {"discipline": 10, "instructor_favor": 10, "mood": 10, "stamina": -5},
+        "chance": 0.8,
+        "success_effects": {"remark": "教官很满意，说：就要这个劲！"},
+        "fail_effects": {"remark": "喊破音，被同学笑", "mood": -5}
+      },
+      {
+        "text": "小声跟喊，保存体力",
+        "effects": {"discipline": -10, "instructor_favor": -5, "mood": 0, "stamina": 0},
+        "chance": 0.5,
+        "success_effects": {"remark": "没被发现"},
+        "fail_effects": {"remark": "被教官点名：你没吃饭吗？", "instructor_favor": -10}
+      }
+    ]
+  },
+  {
+    "id": "choose_formation",
+    "title": "分方阵：人生岔路口",
+    "condition": {"day": 3, "phase": "afternoon"},
+    "description": "教官宣布分方阵训练，有持枪方阵（帅！）、防暴棍方阵（酷！）、正常连队（稳！）。你开始纠结。",
+    "options": [
+      {
+        "text": "持枪方阵——虽然枪重，但拍照好看",
+        "effects": {"mood": 10, "stamina": -5},
+        "set_flags": {"formation": "gun"}
+      },
+      {
+        "text": "防暴棍方阵——棍子耍起来有气势",
+        "effects": {"mood": 10, "stamina": -5},
+        "set_flags": {"formation": "stick"}
+      },
+      {
+        "text": "正常连队——少折腾，安稳度过",
+        "effects": {"mood": 0, "stamina": 0},
+        "set_flags": {"formation": "normal"}
+      }
+    ]
+  },
+  {
+    "id": "gun_train_basic",
+    "title": "持枪基础：枪比想象中重",
+    "condition": {"formation": "gun", "day": {"gte": 4, "lte": 7}, "phase": "training"},
+    "description": "第一次摸到训练枪，你兴奋地端起，结果差点砸到脚。教官说：“枪都拿不稳，怎么保家卫国？”",
+    "options": [
+      {
+        "text": "认真练习，找到平衡点",
+        "effects": {"stamina": -20, "discipline": 15, "health": -5},
+        "chance": 0.7,
+        "success_effects": {"remark": "姿势标准，被表扬", "instructor_favor": 10},
+        "fail_effects": {"remark": "枪托又砸到脚趾", "health": -10, "mood": -10}
+      },
+      {
+        "text": "偷偷把枪扛在肩上省力",
+        "effects": {"stamina": -10, "discipline": -10, "instructor_favor": -10},
+        "chance": 0.5,
+        "success_effects": {"remark": "没被发现"},
+        "fail_effects": {"remark": "被教官罚举枪5分钟", "stamina": -15, "mood": -15}
+      }
+    ]
+  },
+  {
+    "id": "gun_train_march",
+    "title": "持枪行进：人枪合一？",
+    "condition": {"formation": "gun", "day": {"gte": 5, "lte": 7}, "phase": "training"},
+    "description": "持枪齐步走，要求枪线整齐。你走着走着，枪口就歪到了旁边同学脸上。同学一脸惊恐。",
+    "options": [
+      {
+        "text": "调整握姿，保持枪口向前",
+        "effects": {"stamina": -20, "discipline": 10, "mood": -5},
+        "chance": 0.65,
+        "success_effects": {"remark": "排面整齐，被表扬", "instructor_favor": 5},
+        "fail_effects": {"remark": "枪口碰到前面同学头盔", "classmate_relation": -10}
+      },
+      {
+        "text": "随便拿枪，跟上队伍",
+        "effects": {"stamina": -10, "discipline": -10, "instructor_favor": -5},
+        "chance": 0.5,
+        "success_effects": {"remark": "没被注意"},
+        "fail_effects": {"remark": "被教官训斥：枪不是烧火棍！", "instructor_favor": -10, "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "gun_extra_training",
+    "title": "持枪方阵加练：枪口吊水壶",
+    "condition": {"formation": "gun", "day": {"gte": 5, "lte": 7}, "phase": "training"},
+    "description": "教官为了提高持枪稳定性，要求在枪口挂上水壶，坚持5分钟。你的手臂开始剧烈颤抖。",
+    "options": [
+      {
+        "text": "咬紧牙关，坚持到底",
+        "effects": {"stamina": -25, "discipline": 15, "health": -5},
+        "chance": 0.7,
+        "success_effects": {"remark": "成为方阵标杆", "instructor_favor": 15},
+        "fail_effects": {"remark": "手臂抽筋，水壶掉地", "health": -10, "mood": -10}
+      },
+      {
+        "text": "趁教官不注意，稍微抬高手臂",
+        "effects": {"stamina": -15, "discipline": -10, "instructor_favor": -10},
+        "chance": 0.4,
+        "success_effects": {"remark": "没被发现"},
+        "fail_effects": {"remark": "被教官发现，加罚5分钟", "stamina": -20, "mood": -15}
+      }
+    ]
+  },
+  {
+    "id": "stick_train_basic",
+    "title": "防暴棍基础：棍扫一大片",
+    "condition": {"formation": "stick", "day": {"gte": 4, "lte": 7}, "phase": "training"},
+    "description": "防暴棍挥起来虎虎生风，你差点打到旁边的同学。教官赶紧纠正：“看准了再挥！”",
+    "options": [
+      {
+        "text": "认真练习，控制力度",
+        "effects": {"stamina": -15, "discipline": 10, "health": -5},
+        "chance": 0.8,
+        "success_effects": {"remark": "动作有力，被表扬", "instructor_favor": 10},
+        "fail_effects": {"remark": "不小心打到同学手臂", "classmate_relation": -15, "mood": -10}
+      },
+      {
+        "text": "随便挥挥，敷衍了事",
+        "effects": {"stamina": -8, "discipline": -10, "instructor_favor": -10},
+        "chance": 0.5,
+        "success_effects": {"remark": "没被发现"},
+        "fail_effects": {"remark": "被教官罚做20个俯卧撑", "stamina": -15, "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "stick_train_formation",
+    "title": "防暴队形：跑位要快",
+    "condition": {"formation": "stick", "day": {"gte": 5, "lte": 7}, "phase": "training"},
+    "description": "队形变换时，你总是跑错位置，和同学撞在一起。教官扶额：“你们在玩碰碰车吗？”",
+    "options": [
+      {
+        "text": "记住自己的位置和路线",
+        "effects": {"stamina": -20, "discipline": 15, "mood": -5},
+        "chance": 0.7,
+        "success_effects": {"remark": "队形整齐，教官满意", "instructor_favor": 5},
+        "fail_effects": {"remark": "跑错方向，撞到队友", "classmate_relation": -10}
+      },
+      {
+        "text": "跟着别人跑，省心",
+        "effects": {"stamina": -10, "discipline": -10, "instructor_favor": -5},
+        "chance": 0.5,
+        "success_effects": {"remark": "勉强跟上"},
+        "fail_effects": {"remark": "被教官点名：没长脑子？", "instructor_favor": -10}
+      }
+    ]
+  },
+  {
+    "id": "stick_extra_training",
+    "title": "防暴棍实战模拟：对抗演练",
+    "condition": {"formation": "stick", "day": {"gte": 6, "lte": 7}, "phase": "training"},
+    "description": "教官安排两人一组，用防暴棍进行对抗模拟。你的对手是个壮汉，你有点慌。",
+    "options": [
+      {
+        "text": "沉着应对，用技巧化解",
+        "effects": {"stamina": -20, "discipline": 10, "classmate_relation": 10},
+        "chance": 0.6,
+        "success_effects": {"remark": "成功防守，被教官表扬", "instructor_favor": 10},
+        "fail_effects": {"remark": "被打到肩膀，疼得龇牙", "health": -10, "mood": -10}
+      },
+      {
+        "text": "乱挥一气，吓唬对手",
+        "effects": {"stamina": -15, "discipline": -10, "classmate_relation": -5},
+        "chance": 0.4,
+        "success_effects": {"remark": "对手被你的气势吓到"},
+        "fail_effects": {"remark": "被教官制止：你这是耍猴吗？", "instructor_favor": -15, "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "normal_train_review",
+    "title": "正常连队：综合复习",
+    "condition": {"formation": "normal", "day": {"gte": 4, "lte": 7}, "phase": "training"},
+    "description": "正常连队把所有动作过了一遍，你累得舌头都快吐出来了。教官说：“最后再来一遍，就休息！”（然后来了三遍）。",
+    "options": [
+      {
+        "text": "认真复习，争取一次过",
+        "effects": {"stamina": -15, "discipline": 15, "mood": -5},
+        "chance": 0.8,
+        "success_effects": {"remark": "全排一次通过，提前休息", "mood": 10, "instructor_favor": 5},
+        "fail_effects": {"remark": "有人出错，全排加练", "mood": -10, "stamina": -10}
+      },
+      {
+        "text": "差不多得了，反正不考核",
+        "effects": {"stamina": -10, "discipline": -10, "instructor_favor": -5},
+        "chance": 0.6,
+        "success_effects": {"remark": "没被发现"},
+        "fail_effects": {"remark": "被教官加练，叫苦不迭", "stamina": -10, "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "normal_train_emergency",
+    "title": "紧急集合：半夜惊魂",
+    "condition": {"formation": "normal", "day": {"gte": 6, "lte": 7}, "phase": "night"},
+    "description": "凌晨两点，哨声划破夜空。“紧急集合！三分钟！”你从床上弹起来，大脑一片空白。",
+    "options": [
+      {
+        "text": "迅速穿衣，抓起帽子就跑",
+        "effects": {"stamina": -10, "discipline": 10, "mood": -5},
+        "chance": 0.8,
+        "success_effects": {"remark": "准时到达，被表扬", "instructor_favor": 10},
+        "fail_effects": {"remark": "裤子穿反了，被同学笑", "mood": -10}
+      },
+      {
+        "text": "再睡两分钟，反正来得及",
+        "effects": {"stamina": 0, "discipline": -15, "mood": 5},
+        "chance": 0.3,
+        "success_effects": {"remark": "居然没被记迟到"},
+        "fail_effects": {"remark": "被教官抓到，罚跑操场两圈", "stamina": -20, "discipline": -10}
+      }
+    ]
+  },
+  {
+    "id": "random_heatstroke",
+    "title": "中暑危机",
+    "condition": {"day": {"gte": 2, "lte": 7}, "health": {"lte": 45}, "phase": "training"},
+    "description": "太阳越来越毒，你感觉头晕恶心，眼前景象开始旋转。旁边的同学小声问：“你没事吧？脸好白。”",
+    "options": [
+      {
+        "text": "报告教官，申请休息",
+        "effects": {"health": 10, "stamina": 5, "discipline": -5, "mood": 5},
+        "set_flags": {"rested": true}
+      },
+      {
+        "text": "硬撑，不能当逃兵",
+        "effects": {"health": -15, "stamina": -15, "discipline": 10, "instructor_favor": 5},
+        "chance": 0.5,
+        "success_effects": {"remark": "撑下来了，教官表扬", "instructor_favor": 10},
+        "fail_effects": {"remark": "当场晕倒，被抬去医务室", "health": -20, "instructor_favor": -10, "mood": -20}
+      }
+    ]
+  },
+  {
+    "id": "random_rain",
+    "title": "下雨了",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "training"},
+    "description": "突然下起大雨，操场上积水成河。教官看了一眼天，又看了一眼你们。",
+    "options": [
+      {
+        "text": "心里狂喜：终于能休息了",
+        "effects": {"mood": 15, "stamina": 0, "discipline": -5},
+        "chance": 0.7,
+        "success_effects": {"remark": "教官宣布解散避雨", "mood": 10},
+        "fail_effects": {"remark": "教官说：下雨就不训练了？继续！", "mood": -20, "stamina": -10}
+      },
+      {
+        "text": "主动提议：教官，我们去室内练吧",
+        "effects": {"discipline": 10, "instructor_favor": 10, "mood": -5},
+        "chance": 0.6,
+        "success_effects": {"remark": "教官同意，转移室内", "stamina": -5},
+        "fail_effects": {"remark": "教官说：就你话多！加练！", "stamina": -10, "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "random_classmate_conflict",
+    "title": "同学矛盾",
+    "condition": {"day": {"gte": 2, "lte": 7}, "classmate_relation": {"lte": 40}, "phase": "rest"},
+    "description": "休息时，你和旁边同学因为挤占阴凉地发生口角，气氛火药味十足。",
+    "options": [
+      {
+        "text": "主动让步，说声对不起",
+        "effects": {"classmate_relation": 10, "mood": -5, "discipline": 5},
+        "chance": 0.8,
+        "success_effects": {"remark": "对方也道歉，关系缓和", "classmate_relation": 5},
+        "fail_effects": {"remark": "对方不领情，还翻白眼", "mood": -10}
+      },
+      {
+        "text": "寸步不让，谁怕谁",
+        "effects": {"classmate_relation": -15, "mood": -10, "discipline": -5},
+        "chance": 0.5,
+        "success_effects": {"remark": "你赢了地盘，输了人心", "classmate_relation": -10},
+        "fail_effects": {"remark": "被教官听到，两人一起罚站", "stamina": -10, "instructor_favor": -10}
+      }
+    ]
+  },
+  {
+    "id": "random_instructor_story",
+    "title": "教官讲故事",
+    "condition": {"day": {"gte": 3, "lte": 7}, "phase": "rest"},
+    "description": "休息时，教官突然讲起自己当兵的故事，讲得眉飞色舞。你听得入神。",
+    "options": [
+      {
+        "text": "认真听，适时鼓掌",
+        "effects": {"mood": 10, "instructor_favor": 10, "discipline": 5, "stamina": 5},
+        "chance": 0.9,
+        "success_effects": {"remark": "教官很开心，对你们更好了", "instructor_favor": 5},
+        "fail_effects": {"remark": "你鼓掌太用力，手疼", "health": -5}
+      },
+      {
+        "text": "趁机打瞌睡",
+        "effects": {"stamina": 10, "discipline": -10, "instructor_favor": -10},
+        "chance": 0.4,
+        "success_effects": {"remark": "没被发现，补了个觉"},
+        "fail_effects": {"remark": "被教官发现：我讲得不好听吗？罚站！", "stamina": -5, "instructor_favor": -15}
+      }
+    ]
+  },
+  {
+    "id": "random_instructor_milk_tea",
+    "title": "教官请喝奶茶",
+    "condition": {"day": {"gte": 3, "lte": 7}, "phase": "rest", "instructor_favor": {"gte": 35}},
+    "description": "训练间隙，教官突然吹响哨子集合。你心里一紧：不会又加练吧？结果教官咧嘴一笑：“今天表现不错，我请大家喝奶茶！”队伍瞬间炸开锅，欢呼声差点掀翻操场。你简直不敢相信自己的耳朵，幸福来得太突然！",
+    "options": [
+      {
+        "text": "激动地欢呼，大声告诉教官自己喜欢的口味",
+        "effects": {"mood": 20, "instructor_favor": 10, "classmate_relation": 5, "stamina": 5},
+        "chance": 0.9,
+        "success_effects": {"remark": "教官笑着记下，还多给你加了珍珠"},
+        "fail_effects": {"remark": "喊得太大声，被同学笑“没出息”", "mood": -5, "classmate_relation": -5}
+      },
+      {
+        "text": "客气地推辞：“教官，不用破费了，我们不渴。”",
+        "effects": {"mood": 5, "instructor_favor": 5, "discipline": 5},
+        "chance": 0.5,
+        "success_effects": {"remark": "教官觉得你懂事，对你印象更好", "instructor_favor": 10},
+        "fail_effects": {"remark": "同学们起哄：“你不喝我们喝！”你有点尴尬", "classmate_relation": -10, "mood": -10}
+      },
+      {
+        "text": "嬉皮笑脸地问：“教官，能不能多要一杯带回宿舍？”",
+        "effects": {"mood": 15, "instructor_favor": -5, "classmate_relation": 10},
+        "chance": 0.4,
+        "success_effects": {"remark": "教官笑骂：“就你机灵！”真的多给了你一杯", "mood": 10, "instructor_favor": 5},
+        "fail_effects": {"remark": "教官板起脸：“贪心！罚你一会儿多站五分钟军姿！”", "stamina": -5, "instructor_favor": -10, "mood": -5}
+      }
+    ]
+  },
+  {
+    "id": "random_instructor_milk_tea_secret",
+    "title": "教官也喝奶茶",
+    "condition": {"day": {"gte": 3, "lte": 7}, "phase": "rest", "instructor_favor": {"gte": 60}},
+    "description": "你偶然发现教官在休息时也偷偷喝奶茶，还对着手机傻笑。他看见你，尴尬地咳嗽一声。",
+    "options": [
+      {
+        "text": "假装没看见，转身离开",
+        "effects": {"mood": 5, "instructor_favor": 5, "discipline": 5},
+        "chance": 0.8,
+        "success_effects": {"remark": "教官松了口气，对你印象更好", "instructor_favor": 5},
+        "fail_effects": {"remark": "不小心笑出声，教官脸红", "mood": 5, "instructor_favor": -5}
+      },
+      {
+        "text": "调侃教官：“教官，奶茶好喝吗？”",
+        "effects": {"mood": 10, "instructor_favor": -5, "classmate_relation": 0},
+        "chance": 0.5,
+        "success_effects": {"remark": "教官笑骂：就你眼尖！", "instructor_favor": 5},
+        "fail_effects": {"remark": "教官板脸：加练！", "stamina": -10, "instructor_favor": -10}
+      }
+    ]
+  },
+  {
+    "id": "random_sing",
+    "title": "拉歌时间",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "evening"},
+    "description": "晚上拉歌，教官点名让你领唱。你五音不全，但没人知道。",
+    "options": [
+      {
+        "text": "硬着头皮上，吼就完了",
+        "effects": {"mood": 10, "classmate_relation": 10, "instructor_favor": 5},
+        "chance": 0.6,
+        "success_effects": {"remark": "虽然跑调，但气势足，大家跟着吼", "classmate_relation": 10},
+        "fail_effects": {"remark": "跑调跑到天边，被善意嘲笑", "mood": -10}
+      },
+      {
+        "text": "推辞：我嗓子不舒服",
+        "effects": {"mood": -5, "instructor_favor": -5, "discipline": -5},
+        "chance": 0.5,
+        "success_effects": {"remark": "教官没勉强，换了别人"},
+        "fail_effects": {"remark": "教官说：嗓子不舒服就多喝水，明天继续练！", "instructor_favor": -5}
+      }
+    ]
+  },
+  {
+    "id": "random_dormitory_check",
+    "title": "内务检查：叠被子",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "morning"},
+    "description": "教官要检查内务，重点看被子。你看着自己叠得像花卷的被子，心里发虚。",
+    "options": [
+      {
+        "text": "认真叠，努力修出棱角",
+        "effects": {"stamina": -5, "discipline": 10, "mood": -5},
+        "chance": 0.7,
+        "success_effects": {"remark": "被子勉强合格，教官没说什么", "instructor_favor": 5},
+        "fail_effects": {"remark": "棱角还是不行，被要求重叠", "stamina": -5, "mood": -10}
+      },
+      {
+        "text": "随便叠一下，反正不查我",
+        "effects": {"discipline": -10, "mood": 5, "stamina": 0},
+        "chance": 0.4,
+        "success_effects": {"remark": "教官没注意你的床"},
+        "fail_effects": {"remark": "被教官拎出来当反面教材", "discipline": -10, "mood": -15, "instructor_favor": -10}
+      }
+    ]
+  },
+  {
+    "id": "random_canteen",
+    "title": "食堂抢饭",
+    "condition": {"day": {"gte": 1, "lte": 7}, "phase": "noon"},
+    "description": "终于熬到午饭时间，你饥肠辘辘冲进食堂，却发现队伍已经排到门口。",
+    "options": [
+      {
+        "text": "乖乖排队，遵守纪律",
+        "effects": {"discipline": 10, "mood": -5, "stamina": 5},
+        "chance": 0.9,
+        "success_effects": {"remark": "虽然慢，但吃到了饭", "health": 5},
+        "fail_effects": {"remark": "排到你时菜没了", "mood": -15, "health": -5}
+      },
+      {
+        "text": "趁乱插队，速战速决",
+        "effects": {"discipline": -15, "mood": 10, "stamina": 5},
+        "chance": 0.4,
+        "success_effects": {"remark": "成功抢到饭，但被后面同学白眼", "classmate_relation": -10},
+        "fail_effects": {"remark": "被教官抓到，罚站到最后", "instructor_favor": -15, "mood": -15}
+      }
+    ]
+  },
+  {
+    "id": "random_phone",
+    "title": "偷偷打电话",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "night"},
+    "description": "晚上休息时，你躲在被窝里给家里打电话，听到妈妈的声音，鼻子一酸。",
+    "options": [
+      {
+        "text": "倾诉思念，聊了很久",
+        "effects": {"mood": 15, "stamina": -5, "discipline": -5},
+        "chance": 0.7,
+        "success_effects": {"remark": "心情好多了", "mood": 10},
+        "fail_effects": {"remark": "被查寝教官发现，手机被没收", "mood": -20, "discipline": -10}
+      },
+      {
+        "text": "简单报个平安就挂",
+        "effects": {"mood": 5, "discipline": 5, "stamina": 0},
+        "chance": 0.9,
+        "success_effects": {"remark": "没被发现"},
+        "fail_effects": {"remark": "还是被听到声音，提醒注意", "instructor_favor": -5}
+      }
+    ]
+  },
+  {
+    "id": "random_talent_show",
+    "title": "才艺表演",
+    "condition": {"day": {"gte": 4, "lte": 7}, "phase": "evening"},
+    "description": "晚上组织才艺表演，大家起哄让你上台。你表面拒绝，心里有点痒。",
+    "options": [
+      {
+        "text": "上台唱首歌或讲个笑话",
+        "effects": {"mood": 10, "classmate_relation": 10, "instructor_favor": 5},
+        "chance": 0.6,
+        "success_effects": {"remark": "表演大获成功，成为焦点", "classmate_relation": 15, "mood": 15},
+        "fail_effects": {"remark": "紧张忘词，尴尬下台", "mood": -15}
+      },
+      {
+        "text": "坚决不上，当观众",
+        "effects": {"mood": -5, "classmate_relation": -5, "discipline": 0},
+        "chance": 0.8,
+        "success_effects": {"remark": "安静当观众，也挺好"},
+        "fail_effects": {"remark": "被教官点名：必须来一个！", "mood": -10, "instructor_favor": -5}
+      }
+    ]
+  },
+  {
+    "id": "water_bottle_empty",
+    "title": "水壶没水了",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "training"},
+    "description": "训练到一半，你拿起水壶想喝水，发现已经空了。喉咙干得冒烟。",
+    "options": [
+      {
+        "text": "向同学借水喝",
+        "effects": {"classmate_relation": 10, "mood": 5, "stamina": 5, "health": 5},
+        "chance": 0.7,
+        "success_effects": {"remark": "同学大方分享，你们关系更好了"},
+        "fail_effects": {"remark": "对方也没水了，两人干瞪眼", "mood": -5}
+      },
+      {
+        "text": "忍到休息再去打水",
+        "effects": {"stamina": -10, "health": -5, "discipline": 10},
+        "chance": 0.6,
+        "success_effects": {"remark": "坚持下来，被教官表扬有毅力"},
+        "fail_effects": {"remark": "头晕眼花，差点晕倒", "health": -10, "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "sunscreen",
+    "title": "涂防晒霜",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "morning"},
+    "description": "集合前，你拿出防晒霜准备涂。旁边同学笑你“娇气”，但太阳真的很毒。",
+    "options": [
+      {
+        "text": "认真涂抹，保护皮肤",
+        "effects": {"mood": 5, "stamina": -2, "discipline": 0},
+        "chance": 0.9,
+        "success_effects": {"remark": "皮肤没被晒伤，心情不错"},
+        "fail_effects": {"remark": "防晒霜涂进眼睛，疼得流泪", "mood": -5}
+      },
+      {
+        "text": "不涂了，男人/女人怕什么晒",
+        "effects": {"mood": 0, "stamina": 0, "discipline": 5},
+        "chance": 0.7,
+        "success_effects": {"remark": "皮肤晒黑，但没晒伤"},
+        "fail_effects": {"remark": "晚上回宿舍，肩膀火辣辣地疼", "health": -5, "mood": -5}
+      }
+    ]
+  },
+  {
+    "id": "rest_game",
+    "title": "休息游戏：击鼓传花",
+    "condition": {"day": {"gte": 3, "lte": 7}, "phase": "rest"},
+    "description": "休息时，教官组织击鼓传花，传到谁谁表演节目。花在同学们手中快速传递，眼看就要到你。",
+    "options": [
+      {
+        "text": "快速传给下一个人，别停在我这",
+        "effects": {"mood": 5, "classmate_relation": 5, "stamina": 5},
+        "chance": 0.7,
+        "success_effects": {"remark": "成功传出，逃过一劫"},
+        "fail_effects": {"remark": "手滑了，花掉在地上，被罚表演", "mood": -10}
+      },
+      {
+        "text": "故意拿着花，等鼓声停，来个才艺展示",
+        "effects": {"mood": 10, "classmate_relation": 10, "instructor_favor": 5},
+        "chance": 0.6,
+        "success_effects": {"remark": "表演精彩，赢得掌声", "classmate_relation": 10},
+        "fail_effects": {"remark": "紧张到忘词，尴尬下台", "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "rest_instructor_joke",
+    "title": "教官讲冷笑话",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "rest"},
+    "description": "休息时，教官突然讲了个冷笑话：“为什么军人的鞋是绿色的？”你还没反应过来，教官自己先笑了。",
+    "options": [
+      {
+        "text": "捧场大笑，配合教官",
+        "effects": {"mood": 10, "instructor_favor": 10, "classmate_relation": 5},
+        "chance": 0.9,
+        "success_effects": {"remark": "教官很开心，气氛活跃"},
+        "fail_effects": {"remark": "笑得肚子疼", "health": -5}
+      },
+      {
+        "text": "面无表情，觉得好冷",
+        "effects": {"mood": -5, "instructor_favor": -5, "classmate_relation": 0},
+        "chance": 0.5,
+        "success_effects": {"remark": "教官有点尴尬，岔开话题"},
+        "fail_effects": {"remark": "被教官点名：这么不给面子？罚站5分钟", "stamina": -5, "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "life_wash_clothes",
+    "title": "洗衣服",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "evening"},
+    "description": "训练一天，衣服全是汗味。你决定洗衣服，但发现洗衣液快没了。",
+    "options": [
+      {
+        "text": "借同学的洗衣液，认真洗",
+        "effects": {"classmate_relation": 10, "mood": 5, "stamina": -5},
+        "chance": 0.8,
+        "success_effects": {"remark": "衣服洗得香喷喷，心情好"},
+        "fail_effects": {"remark": "同学说：我也要用，你省着点", "classmate_relation": -5}
+      },
+      {
+        "text": "随便冲一下，反正明天还出汗",
+        "effects": {"mood": -5, "stamina": -2, "discipline": -5},
+        "chance": 0.6,
+        "success_effects": {"remark": "没被人发现衣服没洗干净"},
+        "fail_effects": {"remark": "第二天被同学闻到汗味，被嫌弃", "classmate_relation": -10, "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "life_dry_quilt",
+    "title": "晒被子",
+    "condition": {"day": {"gte": 3, "lte": 7}, "phase": "morning"},
+    "description": "难得晴天，大家纷纷把被子拿到阳台晒。你抱着被子出去，发现位置不够。",
+    "options": [
+      {
+        "text": "早点起来占位置，把被子晒好",
+        "effects": {"mood": 10, "stamina": -5, "discipline": 5},
+        "chance": 0.8,
+        "success_effects": {"remark": "晚上盖着有阳光味的被子，舒服"},
+        "fail_effects": {"remark": "被风吹到地上，沾了灰", "mood": -5}
+      },
+      {
+        "text": "算了，不晒了，晚上凑合盖",
+        "effects": {"mood": -5, "stamina": 0, "discipline": -5},
+        "chance": 0.6,
+        "success_effects": {"remark": "没发生什么"},
+        "fail_effects": {"remark": "晚上被子潮湿，睡不好", "stamina": -10, "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "life_hot_water",
+    "title": "打热水",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "evening"},
+    "description": "训练结束后，你想去水房打热水洗澡。水房排了长队，而且热水供应有限。",
+    "options": [
+      {
+        "text": "耐心排队，遵守秩序",
+        "effects": {"discipline": 10, "mood": -5, "stamina": 5},
+        "chance": 0.9,
+        "success_effects": {"remark": "终于打到热水，洗了个舒服澡"},
+        "fail_effects": {"remark": "排到你时热水没了，只能冷水洗", "mood": -15, "health": -5}
+      },
+      {
+        "text": "插队，速战速决",
+        "effects": {"discipline": -15, "mood": 10, "stamina": 5},
+        "chance": 0.4,
+        "success_effects": {"remark": "成功打到热水，但被后面同学骂", "classmate_relation": -15},
+        "fail_effects": {"remark": "被教官抓到，罚重新排队", "instructor_favor": -15, "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "body_blister",
+    "title": "脚底起泡",
+    "condition": {"day": {"gte": 2, "lte": 7}, "health": {"lte": 60}, "phase": "training"},
+    "description": "训练中，你感觉脚底火辣辣地疼，脱鞋一看，起了个大水泡。",
+    "options": [
+      {
+        "text": "报告教官，去医务室处理",
+        "effects": {"health": 10, "stamina": 5, "discipline": 5, "mood": -5},
+        "set_flags": {"blister": true}
+      },
+      {
+        "text": "忍一忍，继续训练",
+        "effects": {"health": -10, "stamina": -10, "discipline": 10, "instructor_favor": 5},
+        "chance": 0.5,
+        "success_effects": {"remark": "坚持下来，但脚更疼了", "health": -5},
+        "fail_effects": {"remark": "水泡破了，感染风险增加", "health": -15, "mood": -15}
+      }
+    ]
+  },
+  {
+    "id": "body_leg_cramp",
+    "title": "腿抽筋",
+    "condition": {"day": {"gte": 3, "lte": 7}, "stamina": {"lte": 30}, "phase": "training"},
+    "description": "正步训练时，你的小腿突然抽筋，疼得你直冒冷汗。",
+    "options": [
+      {
+        "text": "报告教官，要求休息",
+        "effects": {"health": 5, "stamina": 10, "discipline": -5, "mood": -5},
+        "chance": 0.8,
+        "success_effects": {"remark": "教官让你到旁边拉伸，有所缓解"},
+        "fail_effects": {"remark": "教官觉得你娇气，但看你疼得厉害还是让你休息了", "instructor_favor": -5}
+      },
+      {
+        "text": "硬撑，自己偷偷揉",
+        "effects": {"health": -10, "stamina": -5, "discipline": 10, "mood": -10},
+        "chance": 0.4,
+        "success_effects": {"remark": "抽筋慢慢缓解，没被发现"},
+        "fail_effects": {"remark": "摔倒在地，被同学扶起", "health": -10, "classmate_relation": 5}
+      }
+    ]
+  },
+  {
+    "id": "body_suntan",
+    "title": "晒黑",
+    "condition": {"day": {"gte": 3, "lte": 7}, "phase": "evening"},
+    "description": "晚上回宿舍，你照镜子发现自己黑了好几度，脖子和脸两个颜色。",
+    "options": [
+      {
+        "text": "拍照自嘲，发朋友圈",
+        "effects": {"mood": 10, "classmate_relation": 10, "stamina": 0},
+        "chance": 0.8,
+        "success_effects": {"remark": "同学纷纷点赞，气氛欢乐"},
+        "fail_effects": {"remark": "被教官看到，说：还挺会苦中作乐", "instructor_favor": 5}
+      },
+      {
+        "text": "唉声叹气，后悔没涂防晒",
+        "effects": {"mood": -10, "stamina": 0, "discipline": 0},
+        "chance": 0.6,
+        "success_effects": {"remark": "室友安慰你，心里好受点"},
+        "fail_effects": {"remark": "越看越难过，影响睡眠", "stamina": -5, "mood": -5}
+      }
+    ]
+  },
+  {
+    "id": "emotion_massage",
+    "title": "同学帮你按摩",
+    "condition": {"day": {"gte": 3, "lte": 7}, "classmate_relation": {"gte": 60}, "phase": "rest"},
+    "description": "训练结束，你累得腰酸背痛。旁边的同学主动说：“我帮你按按肩膀吧。”",
+    "options": [
+      {
+        "text": "感激地接受，也帮ta按",
+        "effects": {"classmate_relation": 15, "mood": 15, "stamina": 10, "health": 5},
+        "chance": 0.9,
+        "success_effects": {"remark": "互相按摩，疲劳减轻不少"},
+        "fail_effects": {"remark": "按到穴位，疼得大叫", "mood": -5}
+      },
+      {
+        "text": "婉拒，说自己没事",
+        "effects": {"classmate_relation": -5, "mood": 5, "stamina": 0},
+        "chance": 0.7,
+        "success_effects": {"remark": "同学有点失落，但没说什么"},
+        "fail_effects": {"remark": "同学坚持要按，你只好接受", "classmate_relation": 5, "stamina": 5}
+      }
+    ]
+  },
+  {
+    "id": "emotion_instructor_care",
+    "title": "教官的关心",
+    "condition": {"day": {"gte": 3, "lte": 7}, "instructor_favor": {"gte": 60}, "phase": "rest"},
+    "description": "休息时，教官走到你身边，递给你一瓶水：“看你嘴唇都干了，多喝水。”",
+    "options": [
+      {
+        "text": "感动地接过，说谢谢教官",
+        "effects": {"mood": 15, "instructor_favor": 10, "stamina": 5, "discipline": 5},
+        "chance": 0.9,
+        "success_effects": {"remark": "教官拍拍你的肩，鼓励你"},
+        "fail_effects": {"remark": "你感动得说不出话，教官笑了"}
+      },
+      {
+        "text": "客气推辞，说自己有水",
+        "effects": {"mood": 5, "instructor_favor": 5, "discipline": 5},
+        "chance": 0.6,
+        "success_effects": {"remark": "教官没勉强，但对你印象更好"},
+        "fail_effects": {"remark": "教官皱眉：叫你喝就喝！", "instructor_favor": -5, "mood": -5}
+      }
+    ]
+  },
+  {
+    "id": "emotion_talk_with_instructor",
+    "title": "与教官谈心",
+    "condition": {"day": {"gte": 4, "lte": 7}, "instructor_favor": {"gte": 70}, "phase": "rest"},
+    "description": "休息时，教官主动坐到你旁边，问：“感觉怎么样？还能坚持吗？”",
+    "options": [
+      {
+        "text": "如实说累，但会坚持",
+        "effects": {"mood": 10, "instructor_favor": 15, "discipline": 10},
+        "chance": 0.9,
+        "success_effects": {"remark": "教官说：好样的，当兵就要这样", "instructor_favor": 10},
+        "fail_effects": {"remark": "你差点哭出来，教官安慰你", "mood": 5}
+      },
+      {
+        "text": "嬉皮笑脸：不累，还能再跑五圈",
+        "effects": {"mood": 10, "instructor_favor": -5, "classmate_relation": 5},
+        "chance": 0.5,
+        "success_effects": {"remark": "教官笑骂：吹牛！"},
+        "fail_effects": {"remark": "教官说：那好，去跑五圈！", "stamina": -20, "mood": -15}
+      }
+    ]
+  },
+  {
+    "id": "special_hiking",
+    "title": "绕校拉练：围着学校走两圈",
+    "condition": {"day": 5, "phase": "morning"},
+    "description": "今天不练队列，改为绕学校外围走两圈。路线经过教学楼、宿舍区、食堂和操场边，全程大约五公里。你背着水壶，跟着队伍出发。",
+    "options": [
+      {
+        "text": "紧跟队伍，边走边看校园风景",
+        "effects": {"stamina": -12, "discipline": 10, "mood": 8, "health": -2},
+        "chance": 0.75,
+        "success_effects": {"remark": "顺利走完两圈，教官表扬步伐整齐"},
+        "fail_effects": {"remark": "走到第二圈时有点累，但还是坚持住了", "stamina": -5}
+      },
+      {
+        "text": "慢慢走，保存体力，顺便和同学聊天",
+        "effects": {"stamina": -8, "discipline": -5, "mood": 5, "classmate_relation": 5},
+        "chance": 0.6,
+        "success_effects": {"remark": "聊得开心，时间过得快，也没掉队"},
+        "fail_effects": {"remark": "被教官提醒保持队形，收敛了一些", "instructor_favor": -5}
+      }
+    ]
+  },
+  {
+    "id": "special_fire_drill",
+    "title": "消防演练",
+    "condition": {"day": 4, "phase": "afternoon"},
+    "description": "下午组织消防演练，学习使用灭火器和紧急疏散。教官演示时，灭火器喷出大量白烟。",
+    "options": [
+      {
+        "text": "认真听讲，记住操作步骤",
+        "effects": {"discipline": 10, "instructor_favor": 5, "mood": 5},
+        "chance": 0.9,
+        "success_effects": {"remark": "实际操作时被教官表扬"},
+        "fail_effects": {"remark": "步骤记混，差点喷到自己", "mood": -5}
+      },
+      {
+        "text": "觉得好玩，想亲自试试",
+        "effects": {"mood": 10, "discipline": -5, "instructor_favor": 0},
+        "chance": 0.6,
+        "success_effects": {"remark": "被选中操作，成功灭火"},
+        "fail_effects": {"remark": "操作失误，被教官纠正", "instructor_favor": -5}
+      }
+    ]
+  },
+  {
+    "id": "special_first_aid",
+    "title": "急救培训",
+    "condition": {"day": 4, "phase": "morning"},
+    "description": "今天学习心肺复苏和包扎。模型假人躺在地上，你有点紧张。",
+    "options": [
+      {
+        "text": "认真学习，积极练习",
+        "effects": {"discipline": 10, "instructor_favor": 10, "mood": 5, "stamina": -5},
+        "chance": 0.8,
+        "success_effects": {"remark": "动作标准，被教官表扬"},
+        "fail_effects": {"remark": "按压力度太大，被提醒", "mood": -5}
+      },
+      {
+        "text": "躲在后面，不想上手",
+        "effects": {"discipline": -10, "instructor_favor": -5, "mood": 0},
+        "chance": 0.5,
+        "success_effects": {"remark": "没被发现"},
+        "fail_effects": {"remark": "被教官点名，不得不做", "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "funny_instructor_quote",
+    "title": "教官的经典语录",
+    "condition": {"day": {"gte": 2, "lte": 7}, "phase": "training"},
+    "description": "教官突然冒出一句：“你们是我带过最差的一届！”你差点笑出声。",
+    "options": [
+      {
+        "text": "憋住笑，认真训练",
+        "effects": {"discipline": 10, "mood": -5, "instructor_favor": 5},
+        "chance": 0.7,
+        "success_effects": {"remark": "教官看你认真，没再多说"},
+        "fail_effects": {"remark": "没憋住，笑出声被教官瞪", "instructor_favor": -5, "mood": -10}
+      },
+      {
+        "text": "小声接话：那您还带？",
+        "effects": {"discipline": -10, "instructor_favor": -10, "mood": 10},
+        "chance": 0.3,
+        "success_effects": {"remark": "教官没听见，躲过一劫"},
+        "fail_effects": {"remark": "被教官听到，罚做俯卧撑", "stamina": -15, "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "funny_rain_song",
+    "title": "雨中拉歌",
+    "condition": {"day": {"gte": 3, "lte": 7}, "phase": "evening", "weather": "rain"},
+    "description": "晚上突然下雨，无法训练。教官组织大家在屋檐下拉歌，气氛热烈。",
+    "options": [
+      {
+        "text": "放开嗓子唱，享受这一刻",
+        "effects": {"mood": 20, "classmate_relation": 10, "instructor_favor": 5},
+        "chance": 0.8,
+        "success_effects": {"remark": "歌声嘹亮，教官都鼓掌"},
+        "fail_effects": {"remark": "跑调被笑，但大家很开心", "mood": 10}
+      },
+      {
+        "text": "安静听别人唱，鼓掌",
+        "effects": {"mood": 10, "classmate_relation": 5, "discipline": 5},
+        "chance": 0.9,
+        "success_effects": {"remark": "享受氛围"},
+        "fail_effects": {"remark": "被教官点名领唱", "mood": -5, "instructor_favor": 5}
+      }
+    ]
+  },
+  {
+    "id": "life_room_inspection",
+    "title": "宿舍卫生评比",
+    "condition": {"day": 5, "phase": "morning"},
+    "description": "今天要进行宿舍卫生评比，教官会检查每个宿舍。你看着凌乱的床铺，有点慌。",
+    "options": [
+      {
+        "text": "和室友一起打扫，整理内务",
+        "effects": {"stamina": -10, "discipline": 15, "mood": -5, "classmate_relation": 10},
+        "chance": 0.8,
+        "success_effects": {"remark": "宿舍获得流动红旗，教官表扬"},
+        "fail_effects": {"remark": "还是被扣分，但大家尽力了", "mood": -5}
+      },
+      {
+        "text": "随便弄一下，反正不是我的责任",
+        "effects": {"discipline": -10, "mood": 0, "classmate_relation": -10},
+        "chance": 0.4,
+        "success_effects": {"remark": "教官没仔细看，侥幸过关"},
+        "fail_effects": {"remark": "被查出问题，全宿舍受罚", "stamina": -10, "mood": -15, "classmate_relation": -10}
+      }
+    ]
+  },
+  {
+    "id": "final_parade",
+    "title": "会操表演：最终考验",
+    "condition": {"day": 7, "phase": "afternoon"},
+    "description": "军训最后一天，所有方阵接受检阅。你心跳加速，手心出汗。",
+    "options": [
+      {
+        "text": "全神贯注，做好每个动作",
+        "effects": {"stamina": -20, "discipline": 15, "mood": -5},
+        "chance": 0.7,
+        "success_effects": {"remark": "表现完美，全场掌声", "instructor_favor": 20, "classmate_relation": 10},
+        "fail_effects": {"remark": "太紧张，脚步乱了", "mood": -15, "instructor_favor": -5}
+      },
+      {
+        "text": "放松心态，正常发挥",
+        "effects": {"stamina": -10, "discipline": 5, "mood": 5},
+        "chance": 0.6,
+        "success_effects": {"remark": "稳定发挥，没出错", "instructor_favor": 5},
+        "fail_effects": {"remark": "被旁边人带偏，略有瑕疵", "mood": -5}
+      }
+    ]
+  },
+  {
+    "id": "ending_evaluation",
+    "title": "军训结束：告别",
+    "condition": {"day": 7, "phase": "evening"},
+    "description": "军训结束，教官即将离开。大家围在一起，有人哭，有人笑。你站在人群中，百感交集。",
+    "options": [
+      {
+        "text": "大声对教官说谢谢",
+        "effects": {"mood": 15, "instructor_favor": 10, "classmate_relation": 10},
+        "chance": 0.9,
+        "success_effects": {"remark": "教官眼眶红了，拍了拍你的肩", "instructor_favor": 10},
+        "fail_effects": {"remark": "声音哽咽，说不出话", "mood": -5}
+      },
+      {
+        "text": "默默在心里告别",
+        "effects": {"mood": 5, "discipline": 5, "classmate_relation": 0},
+        "chance": 0.8,
+        "success_effects": {"remark": "平静结束"},
+        "fail_effects": {"remark": "有点遗憾没表达", "mood": -5}
+      }
+    ]
+  },
+  {
+    "id": "special_become_monitor",
+    "title": "被选为临时班长",
+    "condition": {"day": 2, "phase": "morning", "instructor_favor": {"gte": 45}},
+    "description": "教官指着你：“你，出列！这几天你当临时班长，负责整队和报告。”你一脸懵。",
+    "options": [
+      {
+        "text": "爽快答应，认真负责",
+        "effects": {"discipline": 10, "instructor_favor": 10, "classmate_relation": 5, "stamina": -5},
+        "set_flags": {"is_monitor": true}
+      },
+      {
+        "text": "推辞：我怕做不好",
+        "effects": {"discipline": -5, "instructor_favor": -5, "mood": -5},
+        "chance": 0.5,
+        "success_effects": {"remark": "教官没勉强，换了别人"},
+        "fail_effects": {"remark": "教官说：军人不能说不行！你还是当吧", "instructor_favor": -5, "set_flags": {"is_monitor": true}}
+      }
+    ]
+  },
+  {
+    "id": "special_monitor_duty",
+    "title": "班长职责：整队报告",
+    "condition": {"is_monitor": true, "day": {"gte": 2, "lte": 7}, "phase": "morning"},
+    "description": "作为临时班长，你需要整队并向教官报告人数。同学们站得歪歪扭扭，你有点紧张。",
+    "options": [
+      {
+        "text": "声音洪亮，认真整队",
+        "effects": {"discipline": 15, "instructor_favor": 10, "classmate_relation": 5, "stamina": -5},
+        "chance": 0.8,
+        "success_effects": {"remark": "报告清晰，被表扬", "instructor_favor": 10},
+        "fail_effects": {"remark": "紧张报错人数，被纠正", "mood": -10}
+      },
+      {
+        "text": "随便喊两声，差不多就行",
+        "effects": {"discipline": -10, "instructor_favor": -10, "classmate_relation": -5},
+        "chance": 0.5,
+        "success_effects": {"remark": "教官没计较"},
+        "fail_effects": {"remark": "被教官训斥：班长就这样当的？", "instructor_favor": -15, "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "special_help_classmate",
+    "title": "帮助同学",
+    "condition": {"day": {"gte": 2, "lte": 7}, "classmate_relation": {"gte": 50}, "phase": "rest"},
+    "description": "休息时，你看到旁边同学在烈日下脸色发白，似乎要中暑。他摇摇欲坠。",
+    "options": [
+      {
+        "text": "扶他去阴凉处，给他喝水",
+        "effects": {"classmate_relation": 15, "mood": 10, "discipline": 10, "stamina": -5},
+        "chance": 0.9,
+        "success_effects": {"remark": "同学非常感激，你们成了朋友", "classmate_relation": 10},
+        "fail_effects": {"remark": "自己也累得够呛", "stamina": -5}
+      },
+      {
+        "text": "报告教官，让教官处理",
+        "effects": {"discipline": 10, "instructor_favor": 5, "classmate_relation": 0, "mood": 0},
+        "chance": 0.8,
+        "success_effects": {"remark": "教官及时处理，同学没事"},
+        "fail_effects": {"remark": "教官觉得你大惊小怪", "instructor_favor": -5}
+      }
+    ]
+  },
+  {
+    "id": "special_instructor_punish",
+    "title": "教官的惩罚",
+    "condition": {"day": {"gte": 2, "lte": 7}, "discipline": {"lte": 30}, "phase": "training"},
+    "description": "你因为纪律散漫被教官盯上了。他让你出列，面无表情地说：“俯卧撑准备。”",
+    "options": [
+      {
+        "text": "老老实实做，认罚",
+        "effects": {"stamina": -20, "discipline": 10, "instructor_favor": 5, "mood": -10},
+        "chance": 0.8,
+        "success_effects": {"remark": "做完，教官说：下次注意"},
+        "fail_effects": {"remark": "做到一半趴下了，被加罚", "stamina": -10, "mood": -15}
+      },
+      {
+        "text": "讨价还价：教官，我错了，能不能少做几个？",
+        "effects": {"discipline": -10, "instructor_favor": -10, "mood": -5},
+        "chance": 0.3,
+        "success_effects": {"remark": "教官心软，减了5个"},
+        "fail_effects": {"remark": "教官冷笑：再加10个！", "stamina": -25, "mood": -20}
+      }
+    ]
+  },
+  {
+    "id": "special_night_talk",
+    "title": "卧谈会",
+    "condition": {"day": {"gte": 3, "lte": 7}, "phase": "night"},
+    "description": "晚上熄灯后，宿舍里开始小声聊天。有人问：“你们觉得军训累吗？”",
+    "options": [
+      {
+        "text": "加入聊天，吐槽加分享",
+        "effects": {"mood": 10, "classmate_relation": 15, "stamina": -5},
+        "chance": 0.7,
+        "success_effects": {"remark": "大家聊得很开心，关系更近了"},
+        "fail_effects": {"remark": "被查寝教官听见，全体罚站", "stamina": -10, "mood": -10}
+      },
+      {
+        "text": "蒙头睡觉，不参与",
+        "effects": {"stamina": 10, "classmate_relation": -5, "mood": -5},
+        "chance": 0.8,
+        "success_effects": {"remark": "睡得挺好"},
+        "fail_effects": {"remark": "被吵得睡不着，第二天没精神", "stamina": -10}
+      }
+    ]
+  },
+  {
+    "id": "special_missing_home",
+    "title": "想家",
+    "condition": {"day": {"gte": 2, "lte": 7}, "mood": {"lte": 30}, "phase": "night"},
+    "description": "夜深人静，你突然特别想家，想妈妈做的饭，想自己的床。鼻子有点酸。",
+    "options": [
+      {
+        "text": "给家里发条信息，倾诉一下",
+        "effects": {"mood": 10, "stamina": -5, "discipline": -5},
+        "chance": 0.7,
+        "success_effects": {"remark": "心情好多了", "mood": 10},
+        "fail_effects": {"remark": "被查寝发现，手机被没收", "mood": -20, "discipline": -10}
+      },
+      {
+        "text": "蒙头睡觉，明天就好了",
+        "effects": {"mood": -5, "stamina": 10, "discipline": 5},
+        "chance": 0.8,
+        "success_effects": {"remark": "睡着了，第二天心情平复"},
+        "fail_effects": {"remark": "失眠，第二天更累", "stamina": -10, "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "special_choose_pacesetter",
+    "title": "选拔训练标兵",
+    "condition": {"day": 5, "phase": "afternoon", "discipline": {"gte": 60}, "instructor_favor": {"gte": 50}},
+    "description": "教官宣布要选拔训练标兵，代表连队参加最后的汇报表演。你有些心动。",
+    "options": [
+      {
+        "text": "主动报名，争取机会",
+        "effects": {"discipline": 10, "instructor_favor": 10, "mood": 10, "stamina": -10},
+        "chance": 0.7,
+        "success_effects": {"remark": "入选标兵，获得额外训练机会", "set_flags": {"is_pacesetter": true}},
+        "fail_effects": {"remark": "落选了，有些失落", "mood": -10}
+      },
+      {
+        "text": "不报名，默默当观众",
+        "effects": {"mood": 0, "discipline": 0, "instructor_favor": -5},
+        "chance": 0.9,
+        "success_effects": {"remark": "轻松度过"},
+        "fail_effects": {"remark": "教官点名让你参加，躲不掉", "set_flags": {"is_pacesetter": true}, "mood": -5}
+      }
+    ]
+  },
+  {
+    "id": "special_pacesetter_training",
+    "title": "标兵加练",
+    "condition": {"is_pacesetter": true, "day": {"gte": 5, "lte": 7}, "phase": "training"},
+    "description": "作为标兵，你需要比其他同学多训练一小时，动作要求更严格。教官亲自指导。",
+    "options": [
+      {
+        "text": "认真训练，追求完美",
+        "effects": {"stamina": -25, "discipline": 20, "instructor_favor": 15, "health": -5},
+        "chance": 0.8,
+        "success_effects": {"remark": "动作越来越标准，教官很满意", "instructor_favor": 10},
+        "fail_effects": {"remark": "体力不支，动作变形", "health": -10, "mood": -10}
+      },
+      {
+        "text": "能偷懒就偷懒",
+        "effects": {"stamina": -15, "discipline": -15, "instructor_favor": -15},
+        "chance": 0.4,
+        "success_effects": {"remark": "没被发现"},
+        "fail_effects": {"remark": "被教官严厉批评，取消标兵资格", "is_pacesetter": false, "mood": -20}
+      }
+    ]
+  },
+  {
+    "id": "special_injury",
+    "title": "意外受伤",
+    "condition": {"day": {"gte": 2, "lte": 7}, "health": {"lte": 50}, "phase": "training"},
+    "description": "训练时你不小心扭到了脚踝，疼痛感传来。教官和同学都看向你。",
+    "options": [
+      {
+        "text": "报告教官，去医务室处理",
+        "effects": {"health": 10, "stamina": 5, "discipline": 5, "mood": -5},
+        "set_flags": {"injured": true}
+      },
+      {
+        "text": "硬撑着继续训练",
+        "effects": {"health": -15, "stamina": -10, "discipline": 10, "instructor_favor": 5},
+        "chance": 0.5,
+        "success_effects": {"remark": "坚持下来，教官表扬", "instructor_favor": 10},
+        "fail_effects": {"remark": "伤势加重，被迫休息", "health": -20, "mood": -15, "instructor_favor": -5}
+      }
+    ]
+  },
+  {
+    "id": "special_weather_change",
+    "title": "天气突变：大风",
+    "condition": {"day": {"gte": 3, "lte": 7}, "phase": "training"},
+    "description": "突然刮起大风，沙尘飞扬，帽子差点被吹飞。教官眯着眼喊：“压住帽子！”",
+    "options": [
+      {
+        "text": "一手扶帽，继续训练",
+        "effects": {"discipline": 10, "stamina": -10, "mood": -5, "health": -5},
+        "chance": 0.7,
+        "success_effects": {"remark": "动作没乱，被表扬"},
+        "fail_effects": {"remark": "帽子飞了，被罚去追", "stamina": -10, "mood": -10}
+      },
+      {
+        "text": "趁机躲到队伍后面避风",
+        "effects": {"discipline": -10, "stamina": -5, "mood": 5},
+        "chance": 0.5,
+        "success_effects": {"remark": "没被发现"},
+        "fail_effects": {"remark": "被教官揪出来：就你精贵？", "instructor_favor": -10, "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "special_instructor_change",
+    "title": "教官换人",
+    "condition": {"day": 4, "phase": "morning"},
+    "description": "训练时突然来了一位新教官，说是原教官临时有任务。新教官看起来更严厉。",
+    "options": [
+      {
+        "text": "保持状态，认真训练",
+        "effects": {"discipline": 10, "instructor_favor": 5, "mood": -5},
+        "chance": 0.8,
+        "success_effects": {"remark": "新教官满意点头"},
+        "fail_effects": {"remark": "新教官要求更高，加练", "stamina": -10, "mood": -10}
+      },
+      {
+        "text": "趁机放松一下，反正新教官不熟",
+        "effects": {"discipline": -10, "instructor_favor": -10, "mood": 5},
+        "chance": 0.4,
+        "success_effects": {"remark": "没被发现"},
+        "fail_effects": {"remark": "新教官火眼金睛，被罚跑圈", "stamina": -15, "mood": -10}
+      }
+    ]
+  },
+  {
+    "id": "special_final_letter",
+    "title": "写给教官的信",
+    "condition": {"day": 7, "phase": "evening", "attended_opening": true},
+    "description": "离别前，有人提议给教官写一封感谢信。你拿起笔，却不知道写什么。",
+    "options": [
+      {
+        "text": "认真写下心里话，感谢教官",
+        "effects": {"mood": 10, "instructor_favor": 15, "classmate_relation": 5},
+        "chance": 0.9,
+        "success_effects": {"remark": "教官看完后眼眶湿润", "instructor_favor": 10},
+        "fail_effects": {"remark": "写得太肉麻，自己都不好意思", "mood": -5}
+      },
+      {
+        "text": "随便写两句，交差",
+        "effects": {"mood": -5, "instructor_favor": -5, "discipline": -5},
+        "chance": 0.5,
+        "success_effects": {"remark": "教官没细看"},
+        "fail_effects": {"remark": "教官说：写得没诚意，重写！", "mood": -10, "stamina": -5}
+      }
+    ]
+  }
+]

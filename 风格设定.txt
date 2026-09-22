@@ -1,0 +1,421 @@
+"""
+军训模拟器 - 风格设定系统（最终优化版）
+新增功能：
+- 自动检测终端 ANSI 支持（Windows 启用虚拟终端）
+- 更多预置主题（迷彩、沙漠、森林、简约）
+- 字符画装饰（方框、分隔线、图标）
+- 主题管理器，支持选择、保存、加载
+- 与事件系统集成示例
+"""
+
+import os
+import sys
+import json
+from typing import Dict, Optional, Any
+
+
+# -------------------- 终端 ANSI 支持检测 --------------------
+def enable_ansi_on_windows():
+    """在 Windows 上启用 ANSI 转义序列（仅 Python 3.6+）"""
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
+        except Exception:
+            pass
+
+
+def terminal_supports_ansi() -> bool:
+    """检测终端是否支持 ANSI 颜色"""
+    if os.getenv("NO_COLOR"):
+        return False
+    if sys.platform == "win32":
+        # Windows 10 及以上通常支持，需启用
+        enable_ansi_on_windows()
+        return True
+    return True  # Linux/macOS 默认支持
+
+
+# -------------------- ANSI 颜色定义 --------------------
+class ANSI:
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+    REVERSED = "\033[7m"
+
+    BLACK = "\033[30m"
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    BLUE = "\033[34m"
+    MAGENTA = "\033[35m"
+    CYAN = "\033[36m"
+    WHITE = "\033[37m"
+    GRAY = "\033[90m"
+    BRIGHT_RED = "\033[91m"
+    BRIGHT_GREEN = "\033[92m"
+    BRIGHT_YELLOW = "\033[93m"
+    BRIGHT_BLUE = "\033[94m"
+    BRIGHT_MAGENTA = "\033[95m"
+    BRIGHT_CYAN = "\033[96m"
+    BRIGHT_WHITE = "\033[97m"
+
+    BG_BLACK = "\033[40m"
+    BG_RED = "\033[41m"
+    BG_GREEN = "\033[42m"
+    BG_YELLOW = "\033[43m"
+    BG_BLUE = "\033[44m"
+    BG_MAGENTA = "\033[45m"
+    BG_CYAN = "\033[46m"
+    BG_WHITE = "\033[47m"
+    BG_GRAY = "\033[100m"
+
+
+# -------------------- 颜色转换 --------------------
+def ansi_to_tkinter(ansi_color: str) -> str:
+    mapping = {
+        ANSI.BLACK: "black",
+        ANSI.RED: "red",
+        ANSI.GREEN: "green",
+        ANSI.YELLOW: "yellow",
+        ANSI.BLUE: "blue",
+        ANSI.MAGENTA: "magenta",
+        ANSI.CYAN: "cyan",
+        ANSI.WHITE: "white",
+        ANSI.GRAY: "gray",
+        ANSI.BRIGHT_RED: "red",
+        ANSI.BRIGHT_GREEN: "light green",
+        ANSI.BRIGHT_YELLOW: "yellow",
+        ANSI.BRIGHT_BLUE: "light blue",
+        ANSI.BRIGHT_MAGENTA: "magenta",
+        ANSI.BRIGHT_CYAN: "cyan",
+        ANSI.BRIGHT_WHITE: "white",
+        ANSI.BG_BLACK: "black",
+        ANSI.BG_RED: "red",
+        ANSI.BG_GREEN: "green",
+        ANSI.BG_YELLOW: "yellow",
+        ANSI.BG_BLUE: "blue",
+        ANSI.BG_MAGENTA: "magenta",
+        ANSI.BG_CYAN: "cyan",
+        ANSI.BG_WHITE: "white",
+        ANSI.BG_GRAY: "gray",
+    }
+    for code, name in mapping.items():
+        if code in ansi_color:
+            return name
+    return "white"
+
+
+# -------------------- 主题类 --------------------
+class Theme:
+    def __init__(self, name: str, colors: Dict[str, str], font: Optional[Dict] = None):
+        self.name = name
+        self.colors = colors
+        self.font = font or {"family": "SimHei", "size": 12, "bold": False}
+
+    def get_color(self, tag: str) -> str:
+        return self.colors.get(tag, ANSI.WHITE)
+
+    def to_dict(self) -> Dict:
+        return {"name": self.name, "colors": self.colors, "font": self.font}
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "Theme":
+        return cls(data.get("name", "自定义"), data.get("colors", {}), data.get("font", {}))
+
+
+# -------------------- 预置主题 --------------------
+MILITARY_THEME = Theme(
+    "军训迷彩",
+    {
+        "background": ANSI.BG_GREEN,
+        "primary": ANSI.BRIGHT_GREEN,
+        "secondary": ANSI.YELLOW,
+        "accent": ANSI.BRIGHT_RED,
+        "success": ANSI.BRIGHT_GREEN,
+        "warning": ANSI.BRIGHT_YELLOW,
+        "error": ANSI.BRIGHT_RED,
+        "info": ANSI.CYAN,
+        "text": ANSI.WHITE,
+        "title": ANSI.BOLD + ANSI.BRIGHT_YELLOW,
+        "subtitle": ANSI.BOLD + ANSI.GREEN,
+        "option": ANSI.BRIGHT_WHITE,
+        "highlight": ANSI.BOLD + ANSI.CYAN,
+        "border": ANSI.GRAY,
+        "dim": ANSI.GRAY,
+    },
+    {"family": "SimHei", "size": 12},
+)
+
+DESERT_THEME = Theme(
+    "沙漠风暴",
+    {
+        "background": ANSI.BG_YELLOW,
+        "primary": ANSI.YELLOW,
+        "secondary": ANSI.BRIGHT_GREEN,
+        "accent": ANSI.BRIGHT_RED,
+        "success": ANSI.BRIGHT_GREEN,
+        "warning": ANSI.BRIGHT_YELLOW,
+        "error": ANSI.BRIGHT_RED,
+        "info": ANSI.CYAN,
+        "text": ANSI.BLACK,
+        "title": ANSI.BOLD + ANSI.YELLOW,
+        "subtitle": ANSI.BOLD + ANSI.GREEN,
+        "option": ANSI.WHITE,
+        "highlight": ANSI.BOLD + ANSI.RED,
+        "border": ANSI.GRAY,
+        "dim": ANSI.GRAY,
+    },
+    {"family": "SimHei", "size": 12},
+)
+
+FOREST_THEME = Theme(
+    "森林绿意",
+    {
+        "background": ANSI.BG_GREEN,
+        "primary": ANSI.GREEN,
+        "secondary": ANSI.BRIGHT_YELLOW,
+        "accent": ANSI.BRIGHT_RED,
+        "success": ANSI.BRIGHT_GREEN,
+        "warning": ANSI.BRIGHT_YELLOW,
+        "error": ANSI.BRIGHT_RED,
+        "info": ANSI.CYAN,
+        "text": ANSI.WHITE,
+        "title": ANSI.BOLD + ANSI.GREEN,
+        "subtitle": ANSI.BOLD + ANSI.BRIGHT_YELLOW,
+        "option": ANSI.WHITE,
+        "highlight": ANSI.BOLD + ANSI.CYAN,
+        "border": ANSI.GRAY,
+        "dim": ANSI.GRAY,
+    },
+    {"family": "SimHei", "size": 12},
+)
+
+SIMPLE_THEME = Theme(
+    "简约白",
+    {
+        "background": "",
+        "primary": ANSI.WHITE,
+        "secondary": ANSI.GRAY,
+        "accent": ANSI.BRIGHT_YELLOW,
+        "success": ANSI.BRIGHT_GREEN,
+        "warning": ANSI.BRIGHT_YELLOW,
+        "error": ANSI.BRIGHT_RED,
+        "info": ANSI.CYAN,
+        "text": ANSI.WHITE,
+        "title": ANSI.BOLD + ANSI.WHITE,
+        "subtitle": ANSI.BOLD + ANSI.GRAY,
+        "option": ANSI.WHITE,
+        "highlight": ANSI.BOLD + ANSI.CYAN,
+        "border": ANSI.GRAY,
+        "dim": ANSI.GRAY,
+    },
+    {"family": "Arial", "size": 12},
+)
+
+NIGHT_THEME = Theme(
+    "夜间",
+    {
+        "background": ANSI.BG_BLACK,
+        "primary": ANSI.BLUE,
+        "secondary": ANSI.CYAN,
+        "accent": ANSI.BRIGHT_MAGENTA,
+        "success": ANSI.BRIGHT_GREEN,
+        "warning": ANSI.BRIGHT_YELLOW,
+        "error": ANSI.BRIGHT_RED,
+        "info": ANSI.CYAN,
+        "text": ANSI.WHITE,
+        "title": ANSI.BOLD + ANSI.BRIGHT_CYAN,
+        "subtitle": ANSI.BOLD + ANSI.BLUE,
+        "option": ANSI.WHITE,
+        "highlight": ANSI.BOLD + ANSI.MAGENTA,
+        "border": ANSI.GRAY,
+        "dim": ANSI.GRAY,
+    },
+    {"family": "SimHei", "size": 12},
+)
+
+
+# -------------------- 风格管理器 --------------------
+class StyleManager:
+    def __init__(self, theme: Theme = MILITARY_THEME, use_ansi: bool = None):
+        self.use_ansi = use_ansi if use_ansi is not None else terminal_supports_ansi()
+        self.theme = theme
+        self.theme_history = [theme]
+
+    # ----- 主题管理 -----
+    def set_theme(self, theme: Theme):
+        self.theme_history.append(theme)
+        self.theme = theme
+
+    def get_theme(self) -> Theme:
+        return self.theme
+
+    def save_theme_to_file(self, filename: str):
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(self.theme.to_dict(), f, ensure_ascii=False, indent=2)
+
+    def load_theme_from_file(self, filename: str) -> bool:
+        try:
+            with open(filename, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            self.set_theme(Theme.from_dict(data))
+            return True
+        except FileNotFoundError:
+            return False
+
+    # ----- 样式方法 -----
+    def stylize(self, text: str, tag: str) -> str:
+        if not self.use_ansi:
+            return text
+        color = self.theme.get_color(tag)
+        return f"{color}{text}{ANSI.RESET}"
+
+    def title(self, text: str) -> str:
+        return self.stylize(text, "title")
+
+    def subtitle(self, text: str) -> str:
+        return self.stylize(text, "subtitle")
+
+    def option(self, text: str) -> str:
+        return self.stylize(text, "option")
+
+    def success(self, text: str) -> str:
+        return self.stylize(text, "success")
+
+    def warning(self, text: str) -> str:
+        return self.stylize(text, "warning")
+
+    def error(self, text: str) -> str:
+        return self.stylize(text, "error")
+
+    def info(self, text: str) -> str:
+        return self.stylize(text, "info")
+
+    def highlight(self, text: str) -> str:
+        return self.stylize(text, "highlight")
+
+    def dim(self, text: str) -> str:
+        return self.stylize(text, "dim")
+
+    # ----- 装饰方法 -----
+    def divider(self, length: int = 40, char: str = "=", tag: str = "border") -> str:
+        return self.stylize(char * length, tag)
+
+    def box(self, text: str, width: int = 40, border_char: str = "=", title: str = None) -> str:
+        """生成带边框的文本框，可选标题"""
+        lines = text.split("\n")
+        border = self.stylize(border_char * width, "border")
+        content = []
+        if title:
+            title_line = title.center(width)
+            content.append(self.stylize(title_line, "title"))
+            content.append(self.stylize(" " * width, "border"))
+        for line in lines:
+            content.append(self.stylize(line.center(width), "text"))
+        return f"{border}\n" + "\n".join(content) + f"\n{border}"
+
+    def icon(self, name: str) -> str:
+        """字符画图标，避免emoji显示问题"""
+        icons = {
+            "sun": "[太阳]",
+            "water": "[水滴]",
+            "food": "[饭碗]",
+            "bed": "[床]",
+            "phone": "[手机]",
+            "music": "[音符]",
+            "warning": "[!]",
+            "star": "[★]",
+            "heart": "[♥]",
+            "flag": "[旗]",
+            "run": "[跑]",
+            "milk": "[奶茶]",
+        }
+        return icons.get(name, "")
+
+    # ----- 打印方法 -----
+    def print_colored(self, text: str, tag: str = "text", end: str = "\n"):
+        print(self.stylize(text, tag), end=end)
+
+    # ----- GUI 支持 -----
+    def get_tkinter_color(self, tag: str) -> str:
+        return ansi_to_tkinter(self.theme.get_color(tag))
+
+    def apply_to_tkinter_widget(self, widget, fg_tag: str = "text", bg_tag: str = "background"):
+        try:
+            import tkinter as tk
+        except ImportError:
+            return
+        widget.configure(fg=self.get_tkinter_color(fg_tag), bg=self.get_tkinter_color(bg_tag))
+
+
+# -------------------- 主题管理器 --------------------
+class ThemeManager:
+    """管理多个主题，方便选择"""
+
+    def __init__(self):
+        self.themes = {
+            "military": MILITARY_THEME,
+            "desert": DESERT_THEME,
+            "forest": FOREST_THEME,
+            "simple": SIMPLE_THEME,
+            "night": NIGHT_THEME,
+        }
+
+    def get_theme(self, name: str) -> Optional[Theme]:
+        return self.themes.get(name)
+
+    def add_theme(self, theme: Theme):
+        self.themes[theme.name] = theme
+
+    def list_themes(self) -> list:
+        return list(self.themes.keys())
+
+    def choose_theme_interactive(self) -> Theme:
+        """命令行选择主题"""
+        print("可用主题：")
+        for i, name in enumerate(self.themes, 1):
+            print(f"{i}. {name}")
+        choice = input("请输入主题编号（默认1）：").strip()
+        try:
+            idx = int(choice) - 1
+            if 0 <= idx < len(self.themes):
+                return list(self.themes.values())[idx]
+        except ValueError:
+            pass
+        return list(self.themes.values())[0]
+
+
+# -------------------- 全局实例 --------------------
+style = StyleManager(theme=MILITARY_THEME, use_ansi=terminal_supports_ansi())
+theme_manager = ThemeManager()
+
+
+# -------------------- 使用示例 --------------------
+if __name__ == "__main__":
+    sm = StyleManager(theme=MILITARY_THEME, use_ansi=True)
+
+    print(sm.divider(50, "="))
+    print(sm.title("军训模拟器"))
+    print(sm.subtitle("—— 第一天 ——"))
+    print(sm.divider(50, "="))
+
+    print(sm.option("1. 站军姿"))
+    print(sm.option("2. 稍息"))
+    print(sm.option("3. 向教官报告"))
+
+    print(sm.success("训练完成！"))
+    print(sm.warning("体力不足，注意休息。"))
+    print(sm.error("你中暑了！"))
+    print(sm.info("天气：晴"))
+
+    print(sm.box("欢迎来到军训", width=30, title="通知"))
+
+    print(sm.icon("sun") + sm.highlight("烈日当空"))
+
+    # 切换主题
+    sm.set_theme(NIGHT_THEME)
+    print(sm.divider(50, "-"))
+    print(sm.title("夜间模式"))
+    print(sm.info("一切安好。"))

@@ -1,0 +1,366 @@
+from typing import Dict, Any, Optional, Tuple, Union, Callable, List
+import json
+import copy
+
+
+class AttributeSystem:
+    """
+    军训模拟器属性系统（优化版）
+    - 支持属性上下限、临时加成
+    - 支持标记管理
+    - 支持事件回调（属性变化时触发）
+    - 支持属性变化历史记录
+    - 支持属性快照与恢复
+    - 支持链式操作
+    - 支持属性联动规则（可选）
+    """
+
+    def __init__(
+        self,
+        initial_attributes: Optional[Dict[str, int]] = None,
+        initial_flags: Optional[Dict[str, Any]] = None,
+        attribute_limits: Optional[Dict[str, Tuple[int, int]]] = None,
+        enable_history: bool = False,
+    ):
+        # 属性上下限
+        self.attribute_limits: Dict[str, Tuple[int, int]] = {
+            "stamina": (0, 100),
+            "discipline": (0, 100),
+            "mood": (0, 100),
+            "instructor_favor": (0, 100),
+            "classmate_relation": (0, 100),
+            "health": (0, 100),
+            "thirst": (0, 100),
+        }
+        if attribute_limits:
+            self.attribute_limits.update(attribute_limits)
+
+        # 默认属性
+        default_attrs = {
+            "stamina": 80,
+            "discipline": 60,
+            "mood": 70,
+            "instructor_favor": 50,
+            "classmate_relation": 50,
+            "health": 80,
+            "thirst": 30,
+        }
+        if initial_attributes:
+            default_attrs.update(initial_attributes)
+
+        self.attributes: Dict[str, int] = {}
+        for attr, val in default_attrs.items():
+            self.attributes[attr] = self._clamp(attr, val)
+
+        # 临时加成
+        self.temporary_bonuses: Dict[str, int] = {}
+
+        # 标记
+        self.flags: Dict[str, Any] = {}
+        if initial_flags:
+            self.flags.update(initial_flags)
+
+        # 回调函数列表：每个元素为 (属性名, 回调函数)
+        # 当属性变化时触发，回调参数为 (属性名, 旧值, 新值, 系统实例)
+        self.change_callbacks: List[Tuple[Optional[str], Callable]] = []
+
+        # 属性变化历史（如果启用）
+        self.enable_history = enable_history
+        self.history: List[Dict[str, Any]] = []
+
+        # 属性联动规则：当某属性满足条件时，触发对另一个属性的修改
+        # 规则格式: {
+        #   "target_attr": "mood",
+        #   "condition": {"stamina": {"lte": 20}},
+        #   "effect": {"mood": -2},
+        #   "interval": 1,  # 每回合检查一次（由外部调用）
+        # }
+        self.link_rules: List[Dict[str, Any]] = []
+
+    # ---------------- 私有方法 ----------------
+    def _clamp(self, attr: str, value: int) -> int:
+        if attr in self.attribute_limits:
+            lo, hi = self.attribute_limits[attr]
+            return max(lo, min(value, hi))
+        return value
+
+    def _record_history(self, attr: str, old_val: int, new_val: int, source: str = "") -> None:
+        if not self.enable_history:
+            return
+        self.history.append({
+            "attr": attr,
+            "old": old_val,
+            "new": new_val,
+            "delta": new_val - old_val,
+            "source": source,
+        })
+        # 限制历史长度，避免内存增长
+        if len(self.history) > 1000:
+            self.history.pop(0)
+
+    def _fire_callbacks(self, attr: str, old_val: int, new_val: int) -> None:
+        for attr_filter, callback in self.change_callbacks:
+            if attr_filter is None or attr_filter == attr:
+                callback(attr, old_val, new_val, self)
+
+    # ---------------- 属性操作 ----------------
+    def get(self, attr: str, include_bonus: bool = False) -> Optional[int]:
+        if attr not in self.attributes:
+            return None
+        base = self.attributes[attr]
+        if include_bonus and attr in self.temporary_bonuses:
+            return base + self.temporary_bonuses[attr]
+        return base
+
+    def set(self, attr: str, value: int, source: str = "") -> "AttributeSystem":
+        if attr not in self.attributes:
+            self.attributes[attr] = self._clamp(attr, value)
+            self._fire_callbacks(attr, 0, value)
+            self._record_history(attr, 0, value, source)
+            return self
+
+        old_val = self.attributes[attr]
+        new_val = self._clamp(attr, value)
+        if old_val != new_val:
+            self.attributes[attr] = new_val
+            self._fire_callbacks(attr, old_val, new_val)
+            self._record_history(attr, old_val, new_val, source)
+        return self
+
+    def add(self, attr: str, delta: int, source: str = "") -> "AttributeSystem":
+        if attr not in self.attributes:
+            raise KeyError(f"未知属性: {attr}")
+        old_val = self.attributes[attr]
+        new_val = self._clamp(attr, old_val + delta)
+        if old_val != new_val:
+            self.attributes[attr] = new_val
+            self._fire_callbacks(attr, old_val, new_val)
+            self._record_history(attr, old_val, new_val, source)
+        return self
+
+    def apply_effects(self, effects: Dict[str, int], source: str = "") -> "AttributeSystem":
+        for attr, delta in effects.items():
+            if isinstance(delta, (int, float)) and attr in self.attributes:
+                self.add(attr, int(delta), source)
+        return self
+
+    # ---------------- 临时加成 ----------------
+    def add_temporary_bonus(self, attr: str, bonus: int) -> "AttributeSystem":
+        self.temporary_bonuses[attr] = self.temporary_bonuses.get(attr, 0) + bonus
+        return self
+
+    def remove_temporary_bonus(self, attr: str) -> "AttributeSystem":
+        self.temporary_bonuses.pop(attr, None)
+        return self
+
+    def clear_temporary_bonuses(self) -> "AttributeSystem":
+        self.temporary_bonuses.clear()
+        return self
+
+    # ---------------- 标记管理 ----------------
+    def set_flag(self, flag: str, value: Any = True) -> "AttributeSystem":
+        self.flags[flag] = value
+        return self
+
+    def get_flag(self, flag: str, default: Any = False) -> Any:
+        return self.flags.get(flag, default)
+
+    def has_flag(self, flag: str) -> bool:
+        return self.flags.get(flag, False) is True
+
+    def remove_flag(self, flag: str) -> "AttributeSystem":
+        self.flags.pop(flag, None)
+        return self
+
+    def apply_flags(self, flags: Dict[str, Any]) -> "AttributeSystem":
+        self.flags.update(flags)
+        return self
+
+    # ---------------- 事件回调 ----------------
+    def on_change(self, attr: Optional[str], callback: Callable) -> "AttributeSystem":
+        """注册属性变化回调。attr为None表示监听所有属性。"""
+        self.change_callbacks.append((attr, callback))
+        return self
+
+    def remove_callbacks(self, attr: Optional[str] = None) -> "AttributeSystem":
+        if attr is None:
+            self.change_callbacks.clear()
+        else:
+            self.change_callbacks = [(a, cb) for a, cb in self.change_callbacks if a != attr]
+        return self
+
+    # ---------------- 属性联动规则 ----------------
+    def add_link_rule(self, target_attr: str, condition: Dict[str, Any], effect: Dict[str, int], interval: int = 1) -> "AttributeSystem":
+        """
+        添加联动规则：当 condition 满足时，对 target_attr 应用 effect（每 interval 次检查）
+        condition 格式与事件条件类似，如 {"stamina": {"lte": 20}}
+        effect 为属性变化字典，如 {"mood": -2}
+        interval 表示每隔几次检查应用一次（通常由外部每回合调用一次 check_link_rules）
+        """
+        self.link_rules.append({
+            "target_attr": target_attr,
+            "condition": condition,
+            "effect": effect,
+            "interval": interval,
+            "counter": 0
+        })
+        return self
+
+    def check_link_rules(self) -> None:
+        """检查并应用联动规则（建议每回合调用一次）"""
+        for rule in self.link_rules:
+            rule["counter"] += 1
+            if rule["counter"] >= rule["interval"]:
+                rule["counter"] = 0
+                if self._check_condition(rule["condition"]):
+                    self.apply_effects(rule["effect"], source="link_rule")
+
+    def _check_condition(self, condition: Dict[str, Any]) -> bool:
+        """简单条件判断，支持 {attr: {gte/lte/eq}} 格式"""
+        for attr, cond in condition.items():
+            if attr not in self.attributes:
+                return False
+            actual = self.attributes[attr]
+            if isinstance(cond, dict):
+                if "gte" in cond and actual < cond["gte"]:
+                    return False
+                if "lte" in cond and actual > cond["lte"]:
+                    return False
+                if "eq" in cond and actual != cond["eq"]:
+                    return False
+            else:
+                if actual != cond:
+                    return False
+        return True
+
+    # ---------------- 状态查询 ----------------
+    def is_exhausted(self) -> bool:
+        return self.get("stamina", include_bonus=True) <= 0
+
+    def is_health_critical(self) -> bool:
+        return self.get("health", include_bonus=True) <= 0
+
+    def is_thirsty(self, threshold: int = 80) -> bool:
+        return self.get("thirst", include_bonus=True) >= threshold
+
+    def is_all_ok(self) -> bool:
+        return (self.get("stamina", include_bonus=True) > 20 and
+                self.get("health", include_bonus=True) > 30 and
+                self.get("mood", include_bonus=True) > 20)
+
+    # ---------------- 快照与恢复 ----------------
+    def snapshot(self) -> Dict[str, Any]:
+        """创建当前状态快照"""
+        return {
+            "attributes": copy.deepcopy(self.attributes),
+            "temporary_bonuses": copy.deepcopy(self.temporary_bonuses),
+            "flags": copy.deepcopy(self.flags),
+        }
+
+    def restore_snapshot(self, snap: Dict[str, Any]) -> "AttributeSystem":
+        """从快照恢复状态（会触发回调）"""
+        # 恢复临时加成和标记
+        self.temporary_bonuses = copy.deepcopy(snap.get("temporary_bonuses", {}))
+        self.flags = copy.deepcopy(snap.get("flags", {}))
+        # 恢复属性（逐项设置以触发回调）
+        for attr, val in snap.get("attributes", {}).items():
+            self.set(attr, val, source="restore")
+        return self
+
+    # ---------------- 序列化 ----------------
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "attributes": copy.deepcopy(self.attributes),
+            "temporary_bonuses": copy.deepcopy(self.temporary_bonuses),
+            "flags": copy.deepcopy(self.flags),
+            "link_rules": copy.deepcopy(self.link_rules),
+        }
+
+    def save_to_file(self, filename: str) -> None:
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(self.to_dict(), f, ensure_ascii=False, indent=2)
+
+    def load_from_dict(self, data: Dict[str, Any]) -> "AttributeSystem":
+        if "attributes" in data:
+            for attr, val in data["attributes"].items():
+                self.set(attr, val, source="load")
+        if "temporary_bonuses" in data:
+            self.temporary_bonuses = copy.deepcopy(data["temporary_bonuses"])
+        if "flags" in data:
+            self.flags = copy.deepcopy(data["flags"])
+        if "link_rules" in data:
+            self.link_rules = copy.deepcopy(data["link_rules"])
+        return self
+
+    def load_from_file(self, filename: str) -> bool:
+        try:
+            with open(filename, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            self.load_from_dict(data)
+            return True
+        except FileNotFoundError:
+            return False
+
+    # ---------------- 显示 ----------------
+    def display_status(self) -> None:
+        print("属性：")
+        for attr, val in self.attributes.items():
+            bonus = self.temporary_bonuses.get(attr, 0)
+            if bonus:
+                print(f"  {attr}: {val} (加成{bonus:+d})")
+            else:
+                print(f"  {attr}: {val}")
+        print("标记：")
+        if self.flags:
+            for flag, val in self.flags.items():
+                print(f"  {flag}: {val}")
+        else:
+            print("  (无)")
+        if self.enable_history and self.history:
+            print("最近变化：")
+            for h in self.history[-5:]:
+                print(f"  {h['attr']}: {h['old']} -> {h['new']} (来源: {h['source']})")
+
+
+# -------------------- 使用示例 --------------------
+if __name__ == "__main__":
+    # 创建带历史记录的属性系统
+    attrs = AttributeSystem(enable_history=True)
+
+    # 注册回调：当健康低于30时警告
+    def health_warning(attr, old, new, system):
+        if attr == "health" and new <= 30:
+            print(f"警告：健康值过低 ({new})！")
+
+    attrs.on_change("health", health_warning)
+
+    # 链式操作
+    attrs.add("stamina", -10, source="训练").apply_effects({"discipline": 5, "mood": -3})
+    attrs.set_flag("has_uniform", True)
+    attrs.add_temporary_bonus("stamina", 5)
+
+    # 添加联动规则：体力低于20时心情每分钟下降
+    attrs.add_link_rule(
+        target_attr="mood",
+        condition={"stamina": {"lte": 20}},
+        effect={"mood": -2},
+        interval=1
+    )
+
+    # 模拟体力过低
+    attrs.set("stamina", 15, source="测试")
+    attrs.check_link_rules()
+    attrs.check_link_rules()
+
+    # 显示状态
+    attrs.display_status()
+
+    # 快照与恢复
+    snap = attrs.snapshot()
+    attrs.add("mood", 20)
+    print("修改后心情:", attrs.get("mood"))
+    attrs.restore_snapshot(snap)
+    print("恢复后心情:", attrs.get("mood"))
+
+    # 保存到文件
+    attrs.save_to_file("test_save.json")
